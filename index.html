@@ -67,7 +67,7 @@ select:focus,input:focus{outline:2px solid var(--g5);border-color:var(--g5)}
 .tabs{display:flex;gap:6px;margin:0 0 14px;background:var(--g1);padding:4px;border-radius:14px;overflow-x:auto}
 .tabs button{flex:1;border:0;background:transparent;padding:8px 12px;border-radius:10px;white-space:nowrap;font-weight:600;color:var(--g8)}
 .tabs button.on{background:#fff;box-shadow:var(--sh)}
-.quran{font-family:"Amiri Quran","Traditional Arabic","Scheherazade New","Noto Naskh Arabic",serif;line-height:2.3;text-align:start;color:#10201e}
+.quran{font-family:"Amiri Quran","Traditional Arabic","Scheherazade New","Noto Naskh Arabic",serif;line-height:2.3;text-align:justify;text-align-last:center;color:#10201e}.bsm.quran{text-align:center;text-align-last:center}
 .ay{cursor:pointer;border-radius:8px;padding:0 2px}
 .ay:hover{background:#f4efe0}
 .ay.play{background:#fbf0cd}
@@ -197,7 +197,7 @@ const $$=(s,r)=>[...(r||document).querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const mem={};let STORAGE_OK=true;try{localStorage.setItem('wird.t','1');localStorage.removeItem('wird.t');}catch(e){STORAGE_OK=false;}
 const store={get(k){try{const v=localStorage.getItem(k);return v==null?mem[k]:v;}catch(e){return mem[k];}},set(k,v){mem[k]=v;try{localStorage.setItem(k,v);}catch(e){}}};
-const defaults=()=>({v:1,loc:null,method:"egypt",asr:"standard",hijriAdj:0,alarm:{on:false,adhan:"a1",per:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true},pre:0,keepAwake:false},reader:{fs:27,bm:null,last:1,tj:false,taf:"muyassar"},listen:{reciter:RECITERS[0][0],s:1,from:1,to:7,rep:1,rr:1,gap:"none",speed:1,next:false},hifz:null,khatma:null,prayers:{},tasbih:{count:0,total:0}});
+const defaults=()=>({v:1,loc:null,method:"egypt",asr:"standard",hijriAdj:0,alarm:{on:false,adhan:"a1",per:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true},pre:0,keepAwake:false},reader:{fs:27,bm:null,last:1,tj:false,taf:"muyassar",lp:false},listen:{reciter:RECITERS[0][0],s:1,from:1,to:7,rep:1,rr:1,gap:"none",speed:1,next:false},hifz:null,khatma:null,prayers:{},tasbih:{count:0,total:0}});
 let ST;
 try{ST=JSON.parse(store.get("wird.v1")||"null")}catch(e){ST=null}
 ST=Object.assign(defaults(),ST||{});
@@ -577,7 +577,19 @@ function pgQuran(p){
 function qRead(){
   const s=Q.s,a0=Q.from,a1=Math.min(Q.to||SC[s-1],SC[s-1]),fs=ST.reader.fs;
   ST.reader.last=s;save();
-  let html='<div class="card"><div class="row sp"><a href="#/quran/list" class="btn soft sm" style="text-decoration:none">الفهرس</a><div class="row" style="gap:6px"><button class="btn soft sm" id="fsD">أ−</button><button class="btn soft sm" id="fsU">أ+</button><button class="btn soft sm" id="tjT">'+(ST.reader.tj?"بدون ألوان":"التجويد ملوّن")+'</button></div></div></div>';
+  let html='<div class="card"><div class="row sp"><a href="#/quran/list" class="btn soft sm" style="text-decoration:none">الفهرس</a><div class="row" style="gap:6px"><button class="btn soft sm" id="fsD">أ−</button><button class="btn soft sm" id="fsU">أ+</button><button class="btn soft sm" id="tjT">'+(ST.reader.tj?"بدون ألوان":"التجويد ملوّن")+'</button><button class="btn soft sm" id="lpT">الاستماع والتكرار</button></div></div></div>';
+  const cL=ST.listen,reps=[1,2,3,5,7,10,20,40,0];
+  const rf=x=>'<option value="'+x+'"'+(cL.rep===x?" selected":"")+'>'+(x?n(x)+(x===1?" مرة":" مرات"):"بلا نهاية")+'</option>';
+  const rrf=x=>'<option value="'+x+'"'+(cL.rr===x?" selected":"")+'>'+(x?n(x)+(x===1?" مرة":" مرات"):"بلا نهاية")+'</option>';
+  const lf=Math.min(Math.max(cL.from||a0,1),SC[s-1]),lt=Math.min(Math.max(cL.to||a1,1),SC[s-1]);
+  if(ST.reader.lp)html+='<div class="card" id="lpanel"><h2 style="margin-top:0">الاستماع والتكرار</h2>'
+  +'<div class="grid2"><div><label class="f" style="margin-top:0">القارئ</label><select id="qpr">'+RECITERS.map(r=>'<option value="'+r[0]+'"'+(cL.reciter===r[0]?" selected":"")+'>'+r[1]+'</option>').join("")+'</select></div>'
+  +'<div><label class="f" style="margin-top:0">السرعة</label><select id="qpsp">'+[.75,.85,1,1.15,1.25,1.5].map(x=>'<option value="'+x+'"'+(cL.speed===x?" selected":"")+'>'+n(x)+'×</option>').join("")+'</select></div></div>'
+  +'<div class="grid2"><div><label class="f">من آية</label><input type="number" id="qpf" min="1" max="'+SC[s-1]+'" value="'+lf+'"></div><div><label class="f">إلى آية</label><input type="number" id="qpt" min="1" max="'+SC[s-1]+'" value="'+lt+'"></div></div>'
+  +'<div class="grid2"><div><label class="f">تكرار كل آية</label><select id="qprep">'+reps.map(rf).join("")+'</select></div><div><label class="f">تكرار المقطع كله</label><select id="qprr">'+reps.map(rrf).join("")+'</select></div></div>'
+  +'<label class="f">وقفة بين الآيات</label><select id="qpgap"><option value="none"'+(cL.gap==="none"?" selected":"")+'>بدون</option><option value="echo"'+(cL.gap==="echo"?" selected":"")+'>بمقدار الآية (ردّدي خلف القارئ)</option><option value="2"'+(cL.gap==="2"?" selected":"")+'>٢ ثانية</option><option value="5"'+(cL.gap==="5"?" selected":"")+'>٥ ثوانٍ</option><option value="10"'+(cL.gap==="10"?" selected":"")+'>١٠ ثوانٍ</option></select>'
+  +'<div class="row" style="margin-top:10px"><button class="btn" id="qpgo">تشغيل</button><button class="btn soft sm" id="qptaf">التفسير الصوتي للسورة</button></div>'
+  +'<p class="muted" style="font-size:12.5px;margin:8px 0 0">أثناء التشغيل تُظلَّل الآية الحالية في المصحف، وتقدرين توقفي وتكملي من الشريط أسفل الشاشة.</p></div>';
   html+='<div class="card"><div class="shead">سورة '+SN[s-1]+'</div>'+(a0===1&&s!==1&&s!==9?'<div class="bsm quran">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>':'')+'<div class="quran" id="txt" style="font-size:'+fs+'px">';
   for(let a=a0;a<=a1;a++)html+='<span class="ay'+(ST.reader.bm&&ST.reader.bm.s===s&&ST.reader.bm.a===a?" bm":"")+'" data-s="'+s+'" data-a="'+a+'">'+(ST.reader.tj?tajColor(ayahText(s,a)):esc(ayahText(s,a)))+'<span class="an">﴿'+n(a)+'﴾</span></span> ';
   html+='</div>'+(ST.reader.tj?TJLEG:'')+'</div><div class="row sp">'+(s>1?'<a class="btn soft" style="text-decoration:none" href="#/quran/'+(s-1)+'">‹ السورة السابقة</a>':'<span></span>')+'<button class="btn" id="rPlay">استمعي للسورة</button>'+(s<114?'<a class="btn soft" style="text-decoration:none" href="#/quran/'+(s+1)+'">السورة التالية ›</a>':'<span></span>')+'</div>'
@@ -586,14 +598,27 @@ function qRead(){
   $("#fsU").onclick=()=>{ST.reader.fs=Math.min(52,fs+3);save();$("#txt").style.fontSize=ST.reader.fs+"px";};
   $("#fsD").onclick=()=>{ST.reader.fs=Math.max(20,fs-3);save();$("#txt").style.fontSize=ST.reader.fs+"px";};
   $("#tjT").onclick=()=>{ST.reader.tj=!ST.reader.tj;save();qRead();};
+  $("#lpT").onclick=()=>{ST.reader.lp=!ST.reader.lp;save();qRead();};
+  if(ST.reader.lp){
+    $("#qpgo").onclick=()=>{
+      const cl=ST.listen;
+      cl.reciter=$("#qpr").value;cl.speed=+$("#qpsp").value;cl.rep=+$("#qprep").value;cl.rr=+$("#qprr").value;cl.gap=$("#qpgap").value;
+      let f=+$("#qpf").value||1,t=+$("#qpt").value||SC[s-1];
+      f=Math.min(Math.max(f,1),SC[s-1]);t=Math.min(Math.max(t,1),SC[s-1]);if(t<f){const x=f;f=t;t=x;}
+      cl.s=s;cl.from=f;cl.to=t;cl.next=false;save();
+      pStart({reciter:cl.reciter,s,from:f,to:t,rep:cl.rep,rr:cl.rr,gap:cl.gap,speed:cl.speed,next:false});
+    };
+    $("#qptaf").onclick=()=>showTafsirAudio(s);
+  }
   $("#rPlay").onclick=()=>pStart({reciter:ST.listen.reciter,s,from:a0,to:a1,rep:1,rr:1,next:false});
   $$(".ay").forEach(e=>e.addEventListener("click",()=>ayahMenu(+e.dataset.s,+e.dataset.a,a1)));
   pUI();
 }
 function ayahMenu(s,a,end){
-  const m=modal('<h3>سورة '+SN[s-1]+' · آية '+n(a)+'</h3><p class="quran" style="font-size:24px;margin:6px 0">'+esc(ayahText(s,a))+'</p><div class="row"><button class="btn" id="m1">التفسير</button><button class="btn" id="m5">معاني الكلمات</button></div><div class="row"><button class="btn soft" id="m2">استمعي من هنا</button><button class="btn soft" id="m3">علامة مرجعية</button><button class="btn soft" id="m4">اختبار حفظ</button></div>');
+  const m=modal('<h3>سورة '+SN[s-1]+' · آية '+n(a)+'</h3><p class="quran" style="font-size:24px;margin:6px 0">'+esc(ayahText(s,a))+'</p><div class="row"><button class="btn" id="m1">التفسير</button><button class="btn" id="m5">معاني الكلمات</button></div><div class="row"><button class="btn soft" id="m2">استمعي من هنا</button><button class="btn soft" id="m3">علامة مرجعية</button><button class="btn soft" id="m4">اختبار حفظ</button><button class="btn soft" id="m6">التفسير الصوتي</button></div>');
   $("#m1",m).onclick=()=>{m.close();showTafsir(s,a);};
   $("#m5",m).onclick=()=>{m.close();showMeanings(s,a);};
+  $("#m6",m).onclick=()=>{m.close();showTafsirAudio(s);};
   $("#m2",m).onclick=()=>{m.close();pStart({reciter:ST.listen.reciter,s,from:a,to:SC[s-1],rep:1,rr:1});};
   $("#m3",m).onclick=()=>{ST.reader.bm={s,a};save();m.close();toast("تم حفظ العلامة المرجعية");qRead();};
   $("#m4",m).onclick=()=>{m.close();testDialog(s,a,Math.min(SC[s-1],a+4));};
