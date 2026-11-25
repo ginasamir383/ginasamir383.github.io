@@ -1066,7 +1066,7 @@ function authUI(mode,preErr){
         google.accounts.id.renderButton(el,{theme:"outline",size:"large",shape:"pill",width:280,locale:"ar"});
       }catch(e){el.innerHTML='<p class="gerr">تعذّر تسجيل الدخول بحساب Google الآن، جرّبي بالبريد الإلكتروني.</p>';}
     }else if(tries>0){setTimeout(()=>mountGis(tries-1),400);}
-    else{el.innerHTML='<p class="gerr">تعذّر تحميل تسجيل الدخول بحساب Google، جرّبي بالبريد الإلكتروني.</p>';}
+    else{el.innerHTML='<p class="gerr">تعذّر تحميل تسجيل الدخول بحساب Google. جرّبي بالبريد الإلكتروني أو أعيدي المحاولة.</p><div class="row" style="justify-content:center"><button class="btn soft sm" id="gRetry">إعادة المحاولة</button></div>';$id("gRetry").onclick=()=>{el.innerHTML='<p class="gerr">جاري إعادة المحاولة…</p>';if(!window.google){const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.defer=true;document.head.appendChild(s);}mountGis(25);};}
   })(25);
   $id("gGo").onclick=async()=>{
     showErr("");
