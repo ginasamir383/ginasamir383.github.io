@@ -482,6 +482,24 @@ function pgTajwid(){
   +'<div class="card"><h2>مفتاح الألوان</h2>'+TJLEG+'</div>';
 }
 
+
+let TAF_AUD=null;
+function showTafsirAudio(s){
+  dget('data/audio-tafsir.json').then(all=>{
+    const segs=all[String(s)]||[];
+    const rows=segs.map(function(g,i){return '<div class="row" style="justify-content:space-between;border-bottom:1px solid #f0ead8;padding:7px 0"><span>'+g[0].replace(/^سورة [^ ]+ ?/,"")+'</span><button class="btn soft sm" data-i="'+i+'">تشغيل</button></div>'}).join("");
+    const m=modal('<h3>التفسير الصوتي · سورة '+SN[s-1]+'</h3><div style="max-height:52vh;overflow:auto">'+(rows||'<p class="muted">لا يوجد تفسير صوتي لهذه السورة.</p>')+'</div><div class="tfsrc">الخلاصة من تفسير الطبري · عبر موقع mp3quran.net</div>',()=>{if(TAF_AUD)TAF_AUD.pause();});
+    let cur=null;
+    $$("[data-i]",m).forEach(function(b){b.onclick=function(){
+      const i=+b.dataset.i;
+      if(!TAF_AUD)TAF_AUD=new Audio();
+      if(cur===b&&!TAF_AUD.paused){TAF_AUD.pause();b.textContent='تشغيل';return;}
+      $$("[data-i]",m).forEach(function(x){x.textContent='تشغيل'});
+      TAF_AUD.src=segs[i][1];TAF_AUD.play();b.textContent='إيقاف';cur=b;
+    }});
+  }).catch(function(){modal('<h3>التفسير الصوتي</h3><p class="muted">تعذّر تحميل قائمة التفسير الصوتي. تحقّقي من الاتصال وحاولي مجددًا.</p>');});
+}
+
 function route(){
   const h=location.hash.replace(/^#\/?/,"")||"home",parts=h.split("/"),r=parts[0];
   $$("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.r===r));
@@ -624,6 +642,7 @@ function pgListen(){
   view.innerHTML='<h1>الاستماع</h1><div class="card"><label class="f" style="margin-top:0">القارئ</label><select id="lr">'+RECITERS.map(r=>'<option value="'+r[0]+'"'+(c.reciter===r[0]?" selected":"")+'>'+r[1]+'</option>').join("")+'</select>'
   +'<label class="f">السورة</label><select id="ls">'+SN.map((x,i)=>'<option value="'+(i+1)+'"'+(c.s===i+1?" selected":"")+'>'+n(i+1)+'. '+x+'</option>').join("")+'</select>'
   +'<div class="grid2"><div><label class="f">من آية</label><input type="number" id="lf" min="1" value="'+c.from+'"></div><div><label class="f">إلى آية</label><input type="number" id="lt" min="1" value="'+c.to+'"></div></div></div>'
+  +'<div class="card"><h2>التفسير الصوتي</h2><p class="muted" style="margin-top:-6px">استمعي لتفسير السورة المختارة: الخلاصة من تفسير الطبري.</p><div class="row"><button class="btn soft sm" id="ltaf">تشغيل التفسير الصوتي</button></div></div>'
   +'<div class="card"><h2>التكرار والحفظ</h2><div class="grid2"><div><label class="f" style="margin-top:0">تكرار كل آية</label><select id="lrep">'+reps.map(x=>'<option value="'+x+'"'+(c.rep===x?" selected":"")+'>'+(x?n(x)+(x===1?" مرة":" مرات"):"بلا نهاية")+'</option>').join("")+'</select></div><div><label class="f" style="margin-top:0">تكرار المقطع كله</label><select id="lrr">'+reps.map(x=>'<option value="'+x+'"'+(c.rr===x?" selected":"")+'>'+(x?n(x)+(x===1?" مرة":" مرات"):"بلا نهاية")+'</option>').join("")+'</select></div></div>'
   +'<div class="grid2"><div><label class="f">وقفة بين الآيات</label><select id="lgap"><option value="none">بدون</option><option value="echo">بمقدار الآية (ردّدي خلف القارئ)</option><option value="2">٢ ثانية</option><option value="5">٥ ثوانٍ</option><option value="10">١٠ ثوانٍ</option></select></div><div><label class="f">السرعة</label><select id="lsp">'+[.75,.85,1,1.15,1.25,1.5].map(x=>'<option value="'+x+'"'+(c.speed===x?" selected":"")+'>'+n(x)+'×</option>').join("")+'</select></div></div>'
   +'<label class="row" style="margin-top:12px;gap:10px"><span class="sw"><input type="checkbox" id="lnx"'+(c.next?" checked":"")+'><i></i></span><span>الانتقال للسورة التالية تلقائيًا</span></label>'
@@ -634,6 +653,7 @@ function pgListen(){
   $("#ls").onchange=()=>{const s=+$("#ls").value;$("#lf").value=1;$("#lt").value=SC[s-1];sync();};
   ["#lr","#lf","#lt","#lrep","#lrr","#lgap","#lsp","#lnx"].forEach(i=>$(i).addEventListener("change",sync));
   $("#lgo").onclick=()=>{sync();pStart(Object.assign({},c));};
+  $("#ltaf").onclick=()=>showTafsirAudio(+$("#ls").value);
   $("#lsl").onclick=()=>{const m=modal('<h3>مؤقّت النوم</h3><div class="row">'+[10,20,30,45,60].map(x=>'<button class="btn soft" data-m="'+x+'">'+n(x)+' دقيقة</button>').join("")+'<button class="btn bad" data-m="0">إلغاء</button></div>');$$("[data-m]",m).forEach(b=>b.onclick=()=>{setSleep(+b.dataset.m);m.close();});};
   sync();
 }
