@@ -625,7 +625,7 @@ function tsmSession(){
     +'<div class="qtxt" id="tsmLive" style="margin-top:2px;font-size:24px;line-height:2.1;min-height:120px">';
   if(!tsm.shown.length)html+='<span class="muted" style="font-size:16px">ستظهر هنا كلماتك أولًا بأول أثناء التسميع…</span>';
   else tsm.shown.forEach(w=>{
-    if(w.t==="ok")html+='<span class="tw tw-ok">'+esc(w.w)+'</span> ';
+    if(w.t==="ok")html+='<span class="tw">'+esc(w.w)+'</span> ';
     else if(w.t==="fix")html+='<span class="tw tw-fix" title="سُمعت: '+esc(w.heard||"")+'">'+esc(w.w)+'</span> ';
     else html+='<span class="tw tw-del">'+esc(w.w)+'</span> ';
   });
@@ -761,7 +761,7 @@ function tsmPaintLive(){
   const el=document.getElementById("tsmLive");if(!el)return;
   let html="";
   tsm.shown.forEach(w=>{
-    if(w.t==="ok")html+='<span class="tw tw-ok">'+esc(w.w)+'</span> ';
+    if(w.t==="ok")html+='<span class="tw">'+esc(w.w)+'</span> ';
     else if(w.t==="fix")html+='<span class="tw tw-fix" title="سُمعت: '+esc(w.heard||"")+'">'+esc(w.w)+'</span> ';
     else html+='<span class="tw tw-del">'+esc(w.w)+'</span> ';
   });
