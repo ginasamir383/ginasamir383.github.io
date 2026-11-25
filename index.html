@@ -139,7 +139,7 @@ select:focus,input:focus{outline:2px solid var(--g5);border-color:var(--g5)}
 .gnote a{color:var(--g7);font-weight:600;cursor:pointer;text-decoration:none}
 
 .tj-madd{color:#b4472f}.tj-ghunna{color:#2f8a5a}.tj-ikhfa{color:#8e44ad}.tj-iqlab{color:#c06a1f}.tj-idghng{color:#14707a}.tj-qalq{color:#2058a8}
-.tjleg{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mute);margin-top:10px}
+.tjleg{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mute);margin-top:10px}.tjex{font-size:24px;background:#fbf7ea;border:1px solid #eee3c8;border-radius:10px;padding:4px 12px;display:inline-block;margin:3px}
 .tjleg span{display:inline-flex;align-items:center;gap:4px}.tjleg i{width:10px;height:10px;border-radius:50%;display:inline-block}
 .tfbk{display:flex;gap:6px;margin:8px 0}
 .tfbk button{flex:1;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:7px 4px;font-size:13px}
@@ -466,10 +466,26 @@ function showMeanings(s,a){
   }).catch(()=>{body.innerHTML='<p class="muted">تعذّر التحميل. تأكدي من الاتصال بالإنترنت.</p>';});
 }
 
+
+const TJL=[
+{t:'الغنّة',p:'صوتٌ يخرج من الخيشوم مقداره حركتان، وتكون أوضح ما تكون في النون والميم المشدّدتين، وفي إدغام النون الساكنة والتنوين بغنّة.',ex:['إِنَّ','عَمَّ','ثُمَّ','مَن يَعْمَلْ']},
+{t:'أحكام النون الساكنة والتنوين',p:'للنون الساكنة والتنوين أربعة أحكام: <b>الإظهار</b> عند حروف الحلق الستة (ء هـ ع ح غ خ) فتنطق النون واضحة، و<b>الإدغام</b> عند حروف (يرملون): بغنّة عند (ي ن م و) وبلا غنّة عند (ل ر)، و<b>الإقلاب</b> عند الباء فتقلب النون ميمًا مخفاة بغنّة، و<b>الإخفاء</b> عند الحروف الخمسة عشر الباقية فتنطق بصفة بين الإظهار والإدغام مع غنّة.',ex:['مِنْ هَادٍ','مَن يَقُولُ','مِن رَّبِّهِمْ','مِن بَعْدِ','مِن شَرِّ']},
+{t:'أحكام الميم الساكنة',p:'للميم الساكنة ثلاثة أحكام: <b>الإخفاء الشفوي</b> عند الباء مع غنّة، و<b>الإدغام الشفوي</b> عند ميم أخرى مع غنّة، و<b>الإظهار الشفوي</b> عند باقي الحروف.',ex:['تَرْمِيهِم بِحِجَارَةٍ','لَهُم مَّا','هُمْ فِيهَا']},
+{t:'القلقلة',p:'اهتزاز الصوت عند النطق بحرف ساكن من حروف (قطب جد). تكون <b>صغرى</b> في وسط الكلام، و<b>كبرى</b> عند الوقف على الحرف.',ex:['يَقْطَعُونَ','وَتَبَّ','الْفَلَقِ']},
+{t:'المدود',p:'<b>الطبيعي</b> حركتان ولا يزاد إلا لسبب، و<b>المتصل</b> أربع إلى خمس حركات إذا جاءت الهمزة بعد المد في الكلمة نفسها، و<b>المنفصل</b> حركتان إلى خمس إذا كانت الهمزة في الكلمة التالية، و<b>العارض للسكون</b> عند الوقف، و<b>اللازم</b> ست حركات، و<b>اللين</b> في الواو والياء الساكنتين قبلهما فتح.',ex:['قَالَ','جَاءَ','يَا أَيُّهَا','الْعَالَمِينَ','الٓمٓ','خَوْفٍ']},
+{t:'لام التعريف والراء',p:'<b>لام التعريف</b> شمسية تُدغم إذا جاء بعدها حرف شمسي، وقمرية تُظهر إذا جاء بعدها حرف قمري. و<b>الراء</b> تُفخّم إذا كانت مفتوحة أو مضمومة أو ساكنة قبلها فتح أو ضم، وتُرقّق إذا كانت مكسورة أو ساكنة قبلها كسر.',ex:['الشَّمْسُ','الْقَمَرُ','رَبِّ','فِرْعَوْنَ']}
+];
+function pgTajwid(){
+  view.innerHTML='<h1>دروس التجويد</h1>'
+  +'<div class="card"><p class="muted">أهم أحكام التلاوة باختصار، والأمثلة ملوّنة بنفس ألوان المصحف عندك. شغّلي «التجويد ملوّن» في المصحف لتري الحكم موضّحًا داخل الآيات.</p></div>'
+  +TJL.map(function(l){return '<div class="card"><h2>'+l.t+'</h2><p class="muted">'+l.p+'</p><div style="text-align:center;margin-top:6px">'+l.ex.map(function(w){return '<span class="quran tjex">'+(ST.reader.tj?tajColor(w):w)+'</span>'}).join('')+'</div></div>'}).join('')
+  +'<div class="card"><h2>مفتاح الألوان</h2>'+TJLEG+'</div>';
+}
+
 function route(){
   const h=location.hash.replace(/^#\/?/,"")||"home",parts=h.split("/"),r=parts[0];
   $$("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.r===r));
-  ({home:pgHome,quran:pgQuran,listen:pgListen,hifz:pgHifz,adhkar:pgAdhkar,more:pgMore}[r]||pgHome)(parts.slice(1));
+  ({home:pgHome,quran:pgQuran,listen:pgListen,hifz:pgHifz,adhkar:pgAdhkar,more:pgMore,tajwid:pgTajwid}[r]||pgHome)(parts.slice(1));
   window.scrollTo(0,0);$("#hij").textContent=hijriStr();
 }
 window.addEventListener("hashchange",route);
@@ -778,7 +794,8 @@ function pgMore(){
   view.innerHTML='<h1>المزيد</h1>'
   +'<div class="card"><h2>اتجاه القبلة</h2><p class="muted" style="margin-top:-6px">من '+esc(L.name)+': <b>'+n(qb)+'°</b> من الشمال باتجاه عقارب الساعة.</p><div class="qib"><span class="nn">شمال</span><div class="nd" id="qn" style="transform:rotate('+qb+'deg)"></div></div><div class="row" style="justify-content:center"><button class="btn soft sm" id="qc">تشغيل البوصلة (للهاتف)</button></div><p class="muted" id="qm" style="text-align:center"></p></div>'
   +'<div class="card"><h2>المسبحة</h2><div class="cnt" id="tc">'+n(ST.tasbih.count)+'</div><div class="row" style="justify-content:center"><button class="btn" style="min-width:150px;min-height:56px;font-size:20px" id="tp">سبّحي</button><button class="btn ghost" id="tr0">تصفير</button></div><p class="muted" style="text-align:center">الإجمالي: '+n(ST.tasbih.total)+'</p></div>'
-  +'<div class="card" id="acctCard" style="display:none"><h2>حسابك</h2><p class="muted" style="margin-top:-6px" id="acctInfo"></p><div class="row"><button class="btn soft sm" id="acctSync">مزامنة الآن</button><button class="btn bad sm" id="acctOut">تسجيل الخروج</button></div></div>'+'<div class="card"><h2>نسخة احتياطية</h2><p class="muted" style="margin-top:-6px">انسخي بياناتك (الخطة والتقدّم) لتحتفظي بها أو لنقلها إلى جهاز آخر.</p><div class="row"><button class="btn soft sm" id="bkx">إظهار النسخة</button><button class="btn soft sm" id="bki">استعادة نسخة</button></div></div>'
+  +'<div class="card"><h2>دروس التجويد</h2><p class="muted" style="margin-top:-6px">أحكام التلاوة باختصار، بأمثلة ملوّنة بنفس ألوان المصحف.</p><div class="row"><a class="btn soft sm" href="#/tajwid" style="text-decoration:none">افتحي الدروس</a></div></div>'
++'<div class="card" id="acctCard" style="display:none"><h2>حسابك</h2><p class="muted" style="margin-top:-6px" id="acctInfo"></p><div class="row"><button class="btn soft sm" id="acctSync">مزامنة الآن</button><button class="btn bad sm" id="acctOut">تسجيل الخروج</button></div></div>'+'<div class="card"><h2>نسخة احتياطية</h2><p class="muted" style="margin-top:-6px">انسخي بياناتك (الخطة والتقدّم) لتحتفظي بها أو لنقلها إلى جهاز آخر.</p><div class="row"><button class="btn soft sm" id="bkx">إظهار النسخة</button><button class="btn soft sm" id="bki">استعادة نسخة</button></div></div>'
   +'<div class="card"><h2>عن التطبيق</h2><p class="muted">مواقيت الصلاة تُحسب على جهازك دون إرسال موقعك لأي جهة. نص المصحف مضمَّن في الصفحة فيعمل بدون اتصال، أما الصوت فيحتاج إلى الإنترنت. عند تسجيل الدخول تُحفظ بياناتك وخطتك في حسابك بأمان لتفتحيها من أي جهاز، وتبقى نسخة على هذا الجهاز تعمل بدون اتصال.</p><button class="btn bad sm" id="wipe">مسح كل بياناتي</button></div>';
   window.__wirdMore&&window.__wirdMore();
   $("#tp").onclick=()=>{ST.tasbih.count++;ST.tasbih.total++;save();$("#tc").textContent=n(ST.tasbih.count);try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}};
