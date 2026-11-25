@@ -893,12 +893,7 @@ function authUI(mode,preErr){
   $id("gToggle").onclick=()=>authUI(mode==="up"?"in":"up");
   $id("gGoogle").onclick=async()=>{
     showErr("");
-    try{await signInWithPopup(auth,provider);}
-    catch(e){
-      if(e&&["auth/popup-blocked","auth/cancelled-popup-request","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].indexOf(e.code)>=0){
-        try{await signInWithRedirect(auth,provider);}catch(e2){showErr(errAr(e2&&e2.code));}
-      }else if(e&&e.code!=="auth/popup-closed-by-user"){showErr(errAr(e&&e.code));}
-    }
+    try{await signInWithRedirect(auth,provider);}catch(e){showErr(errAr(e&&e.code));}
   };
   $id("gGo").onclick=async()=>{
     showErr("");
