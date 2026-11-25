@@ -806,9 +806,10 @@ window.__wirdGateT=setTimeout(function(){
   g.innerHTML=h;
 },12000);
 </script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getAuth,onAuthStateChanged,GoogleAuthProvider,signInWithCredential,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,deleteDoc} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyDC8Jt4OKg7eDw556MAbL-nR8IAr0OQpg4",authDomain:"wird-a1545.firebaseapp.com",projectId:"wird-a1545",appId:"1:238241990747:web:99b7c87381888f7d6e577e"};
@@ -880,7 +881,7 @@ async function syncDown(u){
 
 function authUI(mode,preErr){
   showGate();
-  gateBody.innerHTML='<button class="gbtn" id="gGoogle">'+GLOGO+'المتابعة بحساب Google</button>'
+  gateBody.innerHTML='<div id="gGis" style="display:flex;justify-content:center;min-height:44px"></div>'
   +'<div class="gdiv">أو بالبريد الإلكتروني</div>'
   +'<div class="gfield"><label>البريد الإلكتروني</label><input id="gEmail" type="email" autocomplete="email" inputmode="email" placeholder="name@example.com"></div>'
   +'<div class="gfield"><label>كلمة السر</label><input id="gPass" type="password" autocomplete="'+(mode==="up"?"new-password":"current-password")+'" placeholder="••••••••"></div>'
@@ -891,10 +892,21 @@ function authUI(mode,preErr){
   +'<p class="gnote" style="font-size:12.5px;line-height:1.8">تُحفظ عدّاداتك وخطتك وسلسلة أيامك في حسابك بأمان، فتجدينها كما تركتِها من أي جهاز.</p>';
   if(preErr)showErr(preErr);
   $id("gToggle").onclick=()=>authUI(mode==="up"?"in":"up");
-  $id("gGoogle").onclick=async()=>{
-    showErr("");
-    try{await signInWithRedirect(auth,provider);}catch(e){showErr(errAr(e&&e.code));}
-  };
+  (function mountGis(tries){
+    const el=$id("gGis");if(!el)return;
+    if(window.google&&google.accounts&&google.accounts.id){
+      try{
+        google.accounts.id.initialize({client_id:"238241990747-egrpj6ege9ego93lb0olm91304th72b1.apps.googleusercontent.com",callback:async(resp)=>{
+          if(!resp||!resp.credential){authUI(mode);return;}
+          gateLoading("جاري تسجيل الدخول…");
+          try{await signInWithCredential(auth,GoogleAuthProvider.credential(resp.credential));}
+          catch(e){authUI(mode,errAr(e&&e.code));}
+        },error_callback:()=>{el.innerHTML='<p class="gerr">تعذّر تسجيل الدخول بحساب Google الآن، جرّبي بالبريد الإلكتروني.</p>';}});
+        google.accounts.id.renderButton(el,{theme:"outline",size:"large",shape:"pill",width:280,locale:"ar"});
+      }catch(e){el.innerHTML='<p class="gerr">تعذّر تسجيل الدخول بحساب Google الآن، جرّبي بالبريد الإلكتروني.</p>';}
+    }else if(tries>0){setTimeout(()=>mountGis(tries-1),400);}
+    else{el.innerHTML='<p class="gerr">تعذّر تحميل تسجيل الدخول بحساب Google، جرّبي بالبريد الإلكتروني.</p>';}
+  })(25);
   $id("gGo").onclick=async()=>{
     showErr("");
     const em=$id("gEmail").value.trim(),pw=$id("gPass").value;
@@ -924,7 +936,8 @@ try{
   gateBody.innerHTML='<p class="muted" style="text-align:center">تعذّر تشغيل خدمة تسجيل الدخول.</p>';
   throw e;
 }
-getRedirectResult(auth).then(r=>{if(r&&r.user)gateLoading("جاري تسجيل الدخول…");}).catch(e=>{if(e&&e.code)showErr(errAr(e.code));});
+
+setTimeout(()=>{try{if(!user&&gateBody.querySelector(".gate-spin"))authUI("in");}catch(e){}},12000);
 onAuthStateChanged(auth,u=>{
   if(u){gateLoading("جاري تحميل بياناتك…");syncDown(u);}
   else{user=null;ready=false;authUI("in");}
