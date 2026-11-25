@@ -137,6 +137,18 @@ select:focus,input:focus{outline:2px solid var(--g5);border-color:var(--g5)}
 .gok{background:#e7f4ec;color:var(--ok);border-radius:10px;padding:8px 12px;font-size:13px;margin:8px 0;display:none}
 .gnote{text-align:center;font-size:13.5px;color:var(--mute);margin-top:14px}
 .gnote a{color:var(--g7);font-weight:600;cursor:pointer;text-decoration:none}
+
+.tj-madd{color:#b4472f}.tj-ghunna{color:#2f8a5a}.tj-ikhfa{color:#8e44ad}.tj-iqlab{color:#c06a1f}.tj-idghng{color:#14707a}.tj-qalq{color:#2058a8}
+.tjleg{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mute);margin-top:10px}
+.tjleg span{display:inline-flex;align-items:center;gap:4px}.tjleg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.tfbk{display:flex;gap:6px;margin:8px 0}
+.tfbk button{flex:1;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:7px 4px;font-size:13px}
+.tfbk button.on{background:var(--g7);color:#fff;border-color:var(--g7)}
+.tfbody{max-height:46vh;overflow-y:auto;font-size:15px;line-height:1.95;padding:4px 2px;text-align:start}
+.mnw{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.mnw b{color:var(--g7);min-width:120px;flex-shrink:0;font-family:"Amiri Quran",serif;font-weight:400;font-size:20px}
+.mnbk{font-size:14px;color:var(--gold);font-weight:700;margin:12px 0 2px}
+.tfsrc{font-size:12px;color:var(--mute);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 </style>
 </head>
 <body>
@@ -185,7 +197,7 @@ const $$=(s,r)=>[...(r||document).querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const mem={};let STORAGE_OK=true;try{localStorage.setItem('wird.t','1');localStorage.removeItem('wird.t');}catch(e){STORAGE_OK=false;}
 const store={get(k){try{const v=localStorage.getItem(k);return v==null?mem[k]:v;}catch(e){return mem[k];}},set(k,v){mem[k]=v;try{localStorage.setItem(k,v);}catch(e){}}};
-const defaults=()=>({v:1,loc:null,method:"egypt",asr:"standard",hijriAdj:0,alarm:{on:false,adhan:"a1",per:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true},pre:0,keepAwake:false},reader:{fs:27,bm:null,last:1},listen:{reciter:RECITERS[0][0],s:1,from:1,to:7,rep:1,rr:1,gap:"none",speed:1,next:false},hifz:null,khatma:null,prayers:{},tasbih:{count:0,total:0}});
+const defaults=()=>({v:1,loc:null,method:"egypt",asr:"standard",hijriAdj:0,alarm:{on:false,adhan:"a1",per:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true},pre:0,keepAwake:false},reader:{fs:27,bm:null,last:1,tj:false,taf:"muyassar"},listen:{reciter:RECITERS[0][0],s:1,from:1,to:7,rep:1,rr:1,gap:"none",speed:1,next:false},hifz:null,khatma:null,prayers:{},tasbih:{count:0,total:0}});
 let ST;
 try{ST=JSON.parse(store.get("wird.v1")||"null")}catch(e){ST=null}
 ST=Object.assign(defaults(),ST||{});
@@ -345,6 +357,115 @@ function pUI(waiting){
 }
 /* ===== الصفحات ===== */
 const view=$("#app");
+// Tajweed colorizer for Uthmani Hafs text. Letter+diacritics are processed as one unit.
+const TJ_MARKS=/[ً-ٰٟۖ-ۭ۟-ۢـ]/;
+const tjIsMark=(c)=>TJ_MARKS.test(c);
+function tajColor(t){
+  const ch=[...t], n=ch.length, cls=new Array(n).fill("");
+  const SUKUN=(m)=>m.includes("ْ")||m.includes("ۡ");
+  const baseFrom=(j,skipTanAlif)=>{ // next base letter, transparent through wasla; skip alif of tanween-nasb
+    let skippedAlif=false;
+    for(;j<n;j++){
+      if(tjIsMark(ch[j])||ch[j]===" ")continue;
+      if(ch[j]==="ٱ"){for(j++;j<n;j++){if(!tjIsMark(ch[j]))break;}if(j>=n)return "";}
+      if(skipTanAlif&&!skippedAlif&&(ch[j]==="ا"||ch[j]==="ى")){skippedAlif=true;continue;}
+      return ch[j];
+    }
+    return "";
+  };
+  const noonRule=(L)=>{
+    if(!L)return "";
+    if("تثجدذزسشصضطظفقك".includes(L))return "tj-ikhfa";
+    if(L==="ب")return "tj-iqlab";
+    if("ينمو".includes(L))return "tj-ghunna";
+    if("لر".includes(L))return "tj-idghng";
+    return "";
+  };
+  let i=0;
+  while(i<n){
+    const c=ch[i];
+    if(c===" "||tjIsMark(c)){i++;continue;}
+    // collect marks of this letter
+    let j=i+1,marks="";
+    while(j<n&&tjIsMark(ch[j])){marks+=ch[j];j++;}
+    const setCls=(k)=>{for(let x=i;x<j;x++)cls[x]=k;};
+    const bareSakin = marks===""&&(j>=n||ch[j]===" ");
+    if(c==="ن"&&(SUKUN(marks)||bareSakin)&&!marks.includes("ّ")){
+      const r=noonRule(baseFrom(j,marks.includes("ً")));
+      if(r)setCls(r);
+    }else if(c==="م"&&(SUKUN(marks)||bareSakin)&&!marks.includes("ّ")){
+      const L=baseFrom(j,false);
+      if(L==="ب")setCls("tj-ikhfa");
+      else if(L==="م")setCls("tj-ghunna");
+    }else if((c==="ن"||c==="م")&&marks.includes("ّ")){
+      setCls("tj-ghunna");
+    }else if(marks.includes("ً")||marks.includes("ٌ")||marks.includes("ٍ")){
+      const r=noonRule(baseFrom(j,marks.includes("ً")));
+      if(r)setCls(r);
+    }else if("قطبجد".includes(c)&&SUKUN(marks)){
+      setCls("tj-qalq");
+    }else if("اويىٰآ".includes(c)){
+      const longMark=marks.includes("ٓ");
+      let ok=false;
+      if(c==="ٰ"||c==="آ")ok=true;
+      else if(longMark)ok=true;
+      else if(marks===""){
+        // previous letter's harakah = marks of previous base letter
+        let p=i-1;while(p>=0&&tjIsMark(ch[p]))p--;
+        let pm="";if(p>=0){let q=p+1;while(q<i){pm+=ch[q];q++;}}
+        if(c==="ا"||c==="ى")ok=pm.includes("َ");
+        else if(c==="و")ok=pm.includes("ُ");
+        else if(c==="ي")ok=pm.includes("ِ");
+      }
+      if(ok)setCls("tj-madd");
+    }
+    i=j;
+  }
+  let html="",cur="",run="";
+  const escCh=(x)=>x.replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+  const flush=()=>{if(!run)return;html+=cur?'<span class="'+cur+'">'+run+"</span>":run;run="";};
+  for(let k=0;k<n;k++){
+    const cc=cls[k]||"";
+    if(cc!==cur){flush();cur=cc;}
+    run+=escCh(ch[k]);
+  }
+  flush();
+  return html;
+}
+if(typeof module!=="undefined")module.exports={tajColor};
+const TJLEG='<div class="tjleg"><span><i style="background:#b4472f"></i>مدّ</span><span><i style="background:#2f8a5a"></i>غنّة</span><span><i style="background:#8e44ad"></i>إخفاء</span><span><i style="background:#c06a1f"></i>إقلاب</span><span><i style="background:#14707a"></i>إدغام بلا غنّة</span><span><i style="background:#2058a8"></i>قلقلة</span></div>';
+const DC={};
+function dget(path){if(!DC[path])DC[path]=fetch(path).then(r=>{if(!r.ok)throw 0;return r.json();}).catch(e=>{delete DC[path];throw e;});return DC[path];}
+const TAFBOOKS=[["muyassar","التفسير الميسَّر","مجمع الملك فهد لطباعة المصحف الشريف"],["saadi","تفسير السعدي","تيسير الكريم الرحمن لعبد الرحمن بن ناصر السعدي"],["mukhtasar","المختصر في التفسير","مركز تفسير للدراسات القرآنية"]];
+function showTafsir(s,a){
+  const m=modal('<h3>التفسير · سورة '+SN[s-1]+' · آية '+n(a)+'</h3><p class="quran" style="font-size:22px;margin:6px 0">'+esc(ayahText(s,a))+'</p><div class="tfbk">'+TAFBOOKS.map(b=>'<button data-b="'+b[0]+'">'+b[1]+'</button>').join("")+'</div><div class="tfbody" id="tfb"></div><div class="row sp" style="margin-top:10px"><button class="btn soft sm" id="tfP">‹ الآية السابقة</button><button class="btn soft sm" id="tfN">الآية التالية ›</button></div><div class="tfsrc" id="tfs"></div>');
+  const load=()=>{
+    const bk=ST.reader.taf||"muyassar",b=TAFBOOKS.find(x=>x[0]===bk);
+    $$(".tfbk button",m).forEach(x=>x.classList.toggle("on",x.dataset.b===bk));
+    const body=$("#tfb",m);body.innerHTML='<p class="muted">…جاري تحميل التفسير</p>';
+    dget("data/tafsir/"+bk+"/"+s+".json").then(d=>{
+      let v=d[String(a)],note="";
+      if(typeof v==="number"){v=d[String(v)];note='<p class="muted" style="font-size:13px;margin-top:8px">هذا المقطع مفسَّر مع الآيات التي قبله في موضع واحد.</p>';}
+      body.innerHTML=v?('<p style="margin:0">'+esc(v)+'</p>'+note):'<p class="muted">لا يوجد تفسير لهذه الآية في هذا المصدر.</p>';
+      $("#tfs",m).textContent=b[2]+" · عبر الموسوعة القرآنية";
+    }).catch(()=>{body.innerHTML='<p class="muted">تعذّر تحميل التفسير. تأكدي من الاتصال بالإنترنت.</p>';});
+  };
+  $$(".tfbk button",m).forEach(x=>x.onclick=()=>{ST.reader.taf=x.dataset.b;save();load();});
+  $("#tfP",m).onclick=()=>{if(a>1){m.close();showTafsir(s,a-1);}};
+  $("#tfN",m).onclick=()=>{if(a<SC[s-1]){m.close();showTafsir(s,a+1);}};
+  load();
+}
+function showMeanings(s,a){
+  const m=modal('<h3>معاني الكلمات · سورة '+SN[s-1]+' · آية '+n(a)+'</h3><p class="quran" style="font-size:22px;margin:6px 0">'+esc(ayahText(s,a))+'</p><div class="tfbody" id="mnb"></div><div class="tfsrc">السراج في بيان غريب القرآن (محمد الخضيري) · التبيان في تفسير غريب القرآن (ابن الهائم) · عبر الموسوعة القرآنية</div>');
+  const body=$("#mnb",m);body.innerHTML='<p class="muted">…جاري التحميل</p>';
+  dget("data/meanings/"+s+".json").then(d=>{
+    const rec=d[String(a)];
+    const sec=(key,name)=>rec&&rec[key]?'<div class="mnbk">'+name+'</div>'+rec[key].map(w=>'<div class="mnw"><b>'+esc(w[0])+'</b><span>'+esc(w[1])+'</span></div>').join(""):"";
+    const html=sec("siraj","السراج في بيان غريب القرآن")+sec("tibyan","التبيان في تفسير غريب القرآن");
+    body.innerHTML=html||'<p class="muted">لا توجد مفردات مسجَّلة لهذه الآية في هذين المصدرين.</p>';
+  }).catch(()=>{body.innerHTML='<p class="muted">تعذّر التحميل. تأكدي من الاتصال بالإنترنت.</p>';});
+}
+
 function route(){
   const h=location.hash.replace(/^#\/?/,"")||"home",parts=h.split("/"),r=parts[0];
   $$("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.r===r));
@@ -422,23 +543,26 @@ function pgQuran(p){
 function qRead(){
   const s=Q.s,a0=Q.from,a1=Math.min(Q.to||SC[s-1],SC[s-1]),fs=ST.reader.fs;
   ST.reader.last=s;save();
-  let html='<div class="card"><div class="row sp"><a href="#/quran/list" class="btn soft sm" style="text-decoration:none">الفهرس</a><div class="row" style="gap:6px"><button class="btn soft sm" id="fsD">أ−</button><button class="btn soft sm" id="fsU">أ+</button></div></div></div>';
+  let html='<div class="card"><div class="row sp"><a href="#/quran/list" class="btn soft sm" style="text-decoration:none">الفهرس</a><div class="row" style="gap:6px"><button class="btn soft sm" id="fsD">أ−</button><button class="btn soft sm" id="fsU">أ+</button><button class="btn soft sm" id="tjT">'+(ST.reader.tj?"بدون ألوان":"التجويد ملوّن")+'</button></div></div></div>';
   html+='<div class="card"><div class="shead">سورة '+SN[s-1]+'</div>'+(a0===1&&s!==1&&s!==9?'<div class="bsm quran">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>':'')+'<div class="quran" id="txt" style="font-size:'+fs+'px">';
-  for(let a=a0;a<=a1;a++)html+='<span class="ay'+(ST.reader.bm&&ST.reader.bm.s===s&&ST.reader.bm.a===a?" bm":"")+'" data-s="'+s+'" data-a="'+a+'">'+esc(ayahText(s,a))+'<span class="an">﴿'+n(a)+'﴾</span></span> ';
-  html+='</div></div><div class="row sp">'+(s>1?'<a class="btn soft" style="text-decoration:none" href="#/quran/'+(s-1)+'">‹ السورة السابقة</a>':'<span></span>')+'<button class="btn" id="rPlay">استمعي للسورة</button>'+(s<114?'<a class="btn soft" style="text-decoration:none" href="#/quran/'+(s+1)+'">السورة التالية ›</a>':'<span></span>')+'</div>'
+  for(let a=a0;a<=a1;a++)html+='<span class="ay'+(ST.reader.bm&&ST.reader.bm.s===s&&ST.reader.bm.a===a?" bm":"")+'" data-s="'+s+'" data-a="'+a+'">'+(ST.reader.tj?tajColor(ayahText(s,a)):esc(ayahText(s,a)))+'<span class="an">﴿'+n(a)+'﴾</span></span> ';
+  html+='</div>'+(ST.reader.tj?TJLEG:'')+'</div><div class="row sp">'+(s>1?'<a class="btn soft" style="text-decoration:none" href="#/quran/'+(s-1)+'">‹ السورة السابقة</a>':'<span></span>')+'<button class="btn" id="rPlay">استمعي للسورة</button>'+(s<114?'<a class="btn soft" style="text-decoration:none" href="#/quran/'+(s+1)+'">السورة التالية ›</a>':'<span></span>')+'</div>'
   +(a1<SC[s-1]?'<p><a class="btn ghost" style="text-decoration:none" href="#/quran/'+s+'/'+(a1+1)+'/'+SC[s-1]+'">تابعي: باقي السورة</a></p>':'');
   $("#qb").innerHTML=html;
   $("#fsU").onclick=()=>{ST.reader.fs=Math.min(52,fs+3);save();$("#txt").style.fontSize=ST.reader.fs+"px";};
   $("#fsD").onclick=()=>{ST.reader.fs=Math.max(20,fs-3);save();$("#txt").style.fontSize=ST.reader.fs+"px";};
+  $("#tjT").onclick=()=>{ST.reader.tj=!ST.reader.tj;save();qRead();};
   $("#rPlay").onclick=()=>pStart({reciter:ST.listen.reciter,s,from:a0,to:a1,rep:1,rr:1,next:false});
   $$(".ay").forEach(e=>e.addEventListener("click",()=>ayahMenu(+e.dataset.s,+e.dataset.a,a1)));
   pUI();
 }
 function ayahMenu(s,a,end){
-  const m=modal('<h3>سورة '+SN[s-1]+' · آية '+n(a)+'</h3><p class="quran" style="font-size:24px;margin:6px 0">'+esc(ayahText(s,a))+'</p><div class="row"><button class="btn" id="m1">استمعي من هنا</button><button class="btn soft" id="m2">علامة مرجعية</button><button class="btn soft" id="m3">اختبار حفظ</button></div>');
-  $("#m1",m).onclick=()=>{m.close();pStart({reciter:ST.listen.reciter,s,from:a,to:SC[s-1],rep:1,rr:1});};
-  $("#m2",m).onclick=()=>{ST.reader.bm={s,a};save();m.close();toast("تم حفظ العلامة المرجعية");qRead();};
-  $("#m3",m).onclick=()=>{m.close();testDialog(s,a,Math.min(SC[s-1],a+4));};
+  const m=modal('<h3>سورة '+SN[s-1]+' · آية '+n(a)+'</h3><p class="quran" style="font-size:24px;margin:6px 0">'+esc(ayahText(s,a))+'</p><div class="row"><button class="btn" id="m1">التفسير</button><button class="btn" id="m5">معاني الكلمات</button></div><div class="row"><button class="btn soft" id="m2">استمعي من هنا</button><button class="btn soft" id="m3">علامة مرجعية</button><button class="btn soft" id="m4">اختبار حفظ</button></div>');
+  $("#m1",m).onclick=()=>{m.close();showTafsir(s,a);};
+  $("#m5",m).onclick=()=>{m.close();showMeanings(s,a);};
+  $("#m2",m).onclick=()=>{m.close();pStart({reciter:ST.listen.reciter,s,from:a,to:SC[s-1],rep:1,rr:1});};
+  $("#m3",m).onclick=()=>{ST.reader.bm={s,a};save();m.close();toast("تم حفظ العلامة المرجعية");qRead();};
+  $("#m4",m).onclick=()=>{m.close();testDialog(s,a,Math.min(SC[s-1],a+4));};
 }
 function qSearch(){
   $("#qb").innerHTML='<div class="card"><input type="search" id="sq" placeholder="اكتبي كلمة أو جزءًا من آية (بدون تشكيل)"><div id="sr" style="margin-top:12px"></div></div>';
