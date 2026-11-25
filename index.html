@@ -116,9 +116,31 @@ select:focus,input:focus{outline:2px solid var(--g5);border-color:var(--g5)}
 
 .dk.done{border-color:var(--ok);background:#f2f9f5}
 .dk-txt{font-family:"Amiri Quran","Traditional Arabic","Noto Naskh Arabic",serif;line-height:2.2;font-size:1.12em;color:#10201e}
+#gate{position:fixed;inset:0;z-index:200;background:var(--cream);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+#gate.hide{display:none}
+.gate-box{width:100%;max-width:400px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:28px 22px;box-shadow:var(--sh)}
+.gate-brand{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:32px;color:var(--g8)}
+.gate-brand svg{width:36px;height:36px}
+.gate-tag{text-align:center;color:var(--mute);font-size:14px;margin:2px 0 20px}
+.gate-spin{width:34px;height:34px;margin:16px auto;border:3.5px solid var(--g1);border-top-color:var(--g7);border-radius:50%;animation:gspin 1s linear infinite}
+@keyframes gspin{to{transform:rotate(360deg)}}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border-radius:14px;border:1.5px solid var(--line);background:#fff;font-weight:600;font-size:15px}
+.gbtn:active{background:var(--g1)}
+.gbtn svg{width:20px;height:20px}
+.gdiv{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:13px;margin:16px 0}
+.gdiv:before,.gdiv:after{content:"";flex:1;height:1px;background:var(--line)}
+.gfield{margin-bottom:10px;text-align:right}
+.gfield label{display:block;font-size:13px;color:var(--mute);margin-bottom:4px}
+.gfield input{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;direction:ltr;text-align:left}
+.gfield input:focus{outline:none;border-color:var(--g5)}
+.gerr{background:#fbeae5;color:var(--bad);border-radius:10px;padding:8px 12px;font-size:13px;margin:8px 0;display:none}
+.gok{background:#e7f4ec;color:var(--ok);border-radius:10px;padding:8px 12px;font-size:13px;margin:8px 0;display:none}
+.gnote{text-align:center;font-size:13.5px;color:var(--mute);margin-top:14px}
+.gnote a{color:var(--g7);font-weight:600;cursor:pointer;text-decoration:none}
 </style>
 </head>
 <body>
+<div id="gate"><div class="gate-box"><div class="gate-brand"><svg viewBox="0 0 32 32" fill="none" stroke="#d9b45f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3c-6 3-9 8-9 13a9 9 0 0 0 18 0c0-5-3-10-9-13z"/><path d="M16 12v13M11 17h10"/></svg>وِرد</div><div class="gate-tag">الصلاة والقرآن والأذكار</div><div id="gateBody"><div class="gate-spin"></div><p class="muted" style="text-align:center">لحظة من فضلك…</p></div></div></div>
 <div id="top"><div class="brand"><svg viewBox="0 0 32 32" fill="none" stroke="#d9b45f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3c-6 3-9 8-9 13a9 9 0 0 0 18 0c0-5-3-10-9-13z"/><path d="M16 12v13M11 17h10"/></svg>وِرد</div><div class="hij" id="hij"></div></div>
 <div id="app"></div>
 <div id="mini"></div>
@@ -168,7 +190,7 @@ let ST;
 try{ST=JSON.parse(store.get("wird.v1")||"null")}catch(e){ST=null}
 ST=Object.assign(defaults(),ST||{});
 ST.alarm=Object.assign(defaults().alarm,ST.alarm);
-const save=()=>store.set("wird.v1",JSON.stringify(ST));
+const save=()=>{store.set("wird.v1",JSON.stringify(ST));window.__wirdSave&&window.__wirdSave();};
 function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600);}
 function modal(html,onclose){const m=document.createElement("div");m.className="modal";m.innerHTML='<div class="sheet">'+html+'</div>';m.addEventListener("click",e=>{if(e.target===m)close();});function close(){m.remove();onclose&&onclose();}document.body.appendChild(m);m.close=close;return m;}
 const todayKey=(d=new Date())=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
@@ -632,13 +654,14 @@ function pgMore(){
   view.innerHTML='<h1>المزيد</h1>'
   +'<div class="card"><h2>اتجاه القبلة</h2><p class="muted" style="margin-top:-6px">من '+esc(L.name)+': <b>'+n(qb)+'°</b> من الشمال باتجاه عقارب الساعة.</p><div class="qib"><span class="nn">شمال</span><div class="nd" id="qn" style="transform:rotate('+qb+'deg)"></div></div><div class="row" style="justify-content:center"><button class="btn soft sm" id="qc">تشغيل البوصلة (للهاتف)</button></div><p class="muted" id="qm" style="text-align:center"></p></div>'
   +'<div class="card"><h2>المسبحة</h2><div class="cnt" id="tc">'+n(ST.tasbih.count)+'</div><div class="row" style="justify-content:center"><button class="btn" style="min-width:150px;min-height:56px;font-size:20px" id="tp">سبّحي</button><button class="btn ghost" id="tr0">تصفير</button></div><p class="muted" style="text-align:center">الإجمالي: '+n(ST.tasbih.total)+'</p></div>'
-  +'<div class="card"><h2>نسخة احتياطية</h2><p class="muted" style="margin-top:-6px">انسخي بياناتك (الخطة والتقدّم) لتحتفظي بها أو لنقلها إلى جهاز آخر.</p><div class="row"><button class="btn soft sm" id="bkx">إظهار النسخة</button><button class="btn soft sm" id="bki">استعادة نسخة</button></div></div>'
-  +'<div class="card"><h2>عن التطبيق</h2><p class="muted">مواقيت الصلاة تُحسب على جهازك دون إرسال موقعك لأي جهة. نص المصحف مضمَّن في الصفحة فيعمل بدون اتصال، أما الصوت فيحتاج إلى الإنترنت. تُحفظ بياناتك وخطتك على هذا الجهاز وهذا المتصفح فقط.</p><button class="btn bad sm" id="wipe">مسح كل بياناتي</button></div>';
+  +'<div class="card" id="acctCard" style="display:none"><h2>حسابك</h2><p class="muted" style="margin-top:-6px" id="acctInfo"></p><div class="row"><button class="btn soft sm" id="acctSync">مزامنة الآن</button><button class="btn bad sm" id="acctOut">تسجيل الخروج</button></div></div>'+'<div class="card"><h2>نسخة احتياطية</h2><p class="muted" style="margin-top:-6px">انسخي بياناتك (الخطة والتقدّم) لتحتفظي بها أو لنقلها إلى جهاز آخر.</p><div class="row"><button class="btn soft sm" id="bkx">إظهار النسخة</button><button class="btn soft sm" id="bki">استعادة نسخة</button></div></div>'
+  +'<div class="card"><h2>عن التطبيق</h2><p class="muted">مواقيت الصلاة تُحسب على جهازك دون إرسال موقعك لأي جهة. نص المصحف مضمَّن في الصفحة فيعمل بدون اتصال، أما الصوت فيحتاج إلى الإنترنت. عند تسجيل الدخول تُحفظ بياناتك وخطتك في حسابك بأمان لتفتحيها من أي جهاز، وتبقى نسخة على هذا الجهاز تعمل بدون اتصال.</p><button class="btn bad sm" id="wipe">مسح كل بياناتي</button></div>';
+  window.__wirdMore&&window.__wirdMore();
   $("#tp").onclick=()=>{ST.tasbih.count++;ST.tasbih.total++;save();$("#tc").textContent=n(ST.tasbih.count);try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}};
   $("#bkx").onclick=()=>{const m=modal('<h3>نسخة بياناتك</h3><p class="muted">انسخي هذا النص كاملًا واحتفظي به.</p><textarea id="bkt" readonly style="width:100%;height:160px;direction:ltr;border:1.5px solid var(--line);border-radius:12px;padding:8px"></textarea><p><button class="btn" id="bkc">إغلاق</button></p>');$("#bkt",m).value=JSON.stringify(ST);$("#bkt",m).onfocus=e=>e.target.select();$("#bkc",m).onclick=()=>m.close();};
-  $("#bki").onclick=()=>{const m=modal('<h3>استعادة نسخة</h3><p class="muted">الصقي النص المحفوظ هنا. سيستبدل بياناتك الحالية.</p><textarea id="bkt" style="width:100%;height:160px;direction:ltr;border:1.5px solid var(--line);border-radius:12px;padding:8px"></textarea><p class="row"><button class="btn" id="bkok">استعادة</button><button class="btn ghost" id="bkc">إلغاء</button></p>');$("#bkc",m).onclick=()=>m.close();$("#bkok",m).onclick=()=>{try{const o=JSON.parse($("#bkt",m).value);if(!o||o.v!==1)throw 0;store.set("wird.v1",JSON.stringify(o));location.reload();}catch(e){toast("النص غير صحيح");}};};
+  $("#bki").onclick=()=>{const m=modal('<h3>استعادة نسخة</h3><p class="muted">الصقي النص المحفوظ هنا. سيستبدل بياناتك الحالية.</p><textarea id="bkt" style="width:100%;height:160px;direction:ltr;border:1.5px solid var(--line);border-radius:12px;padding:8px"></textarea><p class="row"><button class="btn" id="bkok">استعادة</button><button class="btn ghost" id="bkc">إلغاء</button></p>');$("#bkc",m).onclick=()=>m.close();$("#bkok",m).onclick=()=>{try{const o=JSON.parse($("#bkt",m).value);if(!o||o.v!==1)throw 0;o.meta={u:Date.now()};store.set("wird.v1",JSON.stringify(o));location.reload();}catch(e){toast("النص غير صحيح");}};};
   $("#tr0").onclick=()=>{ST.tasbih.count=0;save();$("#tc").textContent=n(0);};
-  $("#wipe").onclick=()=>{if(confirm("سيتم مسح كل البيانات المحفوظة على هذا الجهاز. متأكدة؟")){try{localStorage.removeItem("wird.v1");}catch(e){}delete mem["wird.v1"];location.reload();}};
+  $("#wipe").onclick=()=>{if(confirm("سيتم مسح كل البيانات المحفوظة على هذا الجهاز وفي حسابك إن وُجد. متأكدة؟")){window.__wirdWipe&&window.__wirdWipe();try{localStorage.removeItem("wird.v1");localStorage.removeItem("wird.auth");}catch(e){}delete mem["wird.v1"];location.reload();}};
   $("#qc").onclick=async()=>{
     const go=()=>{const h=e=>{const hd=e.webkitCompassHeading!=null?e.webkitCompassHeading:(e.alpha!=null?360-e.alpha:null);if(hd==null)return;$("#qn")&&($("#qn").style.transform="rotate("+(qb-hd)+"deg)");$("#qm").textContent="وجّهي أعلى الهاتف نحو السهم الذهبي ليكون للأعلى.";};window.addEventListener("deviceorientationabsolute",h,true);window.addEventListener("deviceorientation",h,true);};
     try{if(typeof DeviceOrientationEvent!=="undefined"&&DeviceOrientationEvent.requestPermission){const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){$("#qm").textContent="لم يُسمح باستخدام البوصلة.";return;}}go();$("#qm").textContent="تم تشغيل البوصلة.";}catch(e){$("#qm").textContent="البوصلة غير متاحة على هذا الجهاز. استخدمي الزاوية المذكورة.";}
@@ -773,6 +796,144 @@ function pgAdhkar(p){
 /* ===== تشغيل ===== */
 route();pUI();
 window.__wird={computeTimes,tzOffset,dayTimes,nextPortion,rate,newSeg,LADDER,khatmaBounds,fromGi,gi,SC,TOTAL,ST:()=>ST,qibla};
+</script>
+<script>
+window.__wirdGateT=setTimeout(function(){
+  if(window.__wirdFbOk)return;
+  var g=document.getElementById("gateBody");if(!g)return;
+  var h='<p class="muted" style="text-align:center">تعذّر الاتصال بخدمة تسجيل الدخول.<br>تحقّقي من اتصالك بالإنترنت ثم أعيدي المحاولة.</p><p style="text-align:center"><button class="btn soft sm" onclick="location.reload()">إعادة المحاولة</button></p>';
+  try{if(localStorage.getItem("wird.auth"))h+='<p class="gnote"><a onclick="document.getElementById(\'gate\').classList.add(\'hide\')">المتابعة بدون اتصال، بياناتك محفوظة على هذا الجهاز</a></p>';}catch(e){}
+  g.innerHTML=h;
+},12000);
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,deleteDoc} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig={apiKey:"AIzaSyDC8Jt4OKg7eDw556MAbL-nR8IAr0OQpg4",authDomain:"wird-a1545.firebaseapp.com",projectId:"wird-a1545",appId:"1:238241990747:web:99b7c87381888f7d6e577e"};
+const gate=document.getElementById("gate"),gateBody=document.getElementById("gateBody");
+const AUTH_KEY="wird.auth";
+const GLOGO='<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.61 20.08H42V20H24v8h11.3c-1.65 4.66-6.08 8-11.3 8-6.63 0-12-5.37-12-12s5.37-12 12-12c3.06 0 5.84 1.15 7.94 3.04l5.66-5.66C34.52 6.05 29.62 4 24 4 12.96 4 4 12.96 4 24s8.96 20 20 20 20-8.96 20-20c0-1.28-.13-2.53-.39-3.92z"/><path fill="#FF3D00" d="M6.31 14.69l6.57 4.82C14.66 15.11 18.96 12 24 12c3.06 0 5.84 1.15 7.94 3.04l5.66-5.66C34.52 6.05 29.62 4 24 4 16.32 4 9.66 8.34 6.31 14.69z"/><path fill="#4CAF50" d="M24 44c5.17 0 9.86-1.98 13.41-5.19l-6.19-5.24C29.15 35.09 26.7 36 24 36c-5.2 0-9.6-3.32-11.28-7.95l-6.52 5.02C9.51 39.56 16.23 44 24 44z"/><path fill="#1976D2" d="M43.61 20.08H42V20H24v8h11.3c-.79 2.23-2.23 4.16-4.08 5.57l6.19 5.24C36.97 39.21 44 34 44 24c0-1.28-.13-2.53-.39-3.92z"/></svg>';
+let auth=null,db=null,provider=null,user=null,uref=null,ready=false,syncT=null;
+const $id=x=>document.getElementById(x);
+function hideGate(){gate.classList.add("hide");}
+function showGate(){gate.classList.remove("hide");}
+function gateLoading(t){showGate();gateBody.innerHTML='<div class="gate-spin"></div><p class="muted" style="text-align:center">'+(t||"لحظة من فضلك…")+'</p>';}
+function errAr(c){return({"auth/invalid-email":"البريد الإلكتروني غير صحيح.","auth/email-already-in-use":"هذا البريد مسجّل بالفعل، جرّبي تسجيل الدخول.","auth/weak-password":"كلمة السر ضعيفة؛ استخدمي ٦ أحرف على الأقل.","auth/wrong-password":"البريد الإلكتروني أو كلمة السر غير صحيحة.","auth/invalid-credential":"البريد الإلكتروني أو كلمة السر غير صحيحة.","auth/user-not-found":"لا يوجد حساب بهذا البريد، أنشئي حسابًا جديدًا.","auth/user-disabled":"هذا الحساب موقوف.","auth/too-many-requests":"محاولات كثيرة، انتظري قليلًا ثم حاولي مجددًا.","auth/network-request-failed":"تحقّقي من اتصالك بالإنترنت.","auth/account-exists-with-different-credential":"يوجد حساب بهذا البريد بطريقة دخول أخرى."})[c]||"حدث خطأ غير متوقع، حاولي مرة أخرى.";}
+function showErr(t){const e=$id("gErr");if(!e)return;const ok=$id("gOk");if(ok)ok.style.display="none";if(!t){e.style.display="none";return;}e.textContent=t;e.style.display="block";}
+function showOk(t){const e=$id("gOk");if(!e)return;const er=$id("gErr");if(er)er.style.display="none";e.textContent=t;e.style.display="block";}
+
+async function push(){
+  if(!user||!ready)return;
+  ST.meta={uid:user.uid,u:Date.now()};
+  const json=JSON.stringify(ST);
+  store.set("wird.v1",json);
+  try{await setDoc(uref,{json:json,u:ST.meta.u,email:user.email||""},{merge:true});}catch(e){}
+}
+window.__wirdSave=()=>{if(!ready)return;clearTimeout(syncT);syncT=setTimeout(()=>{push();},1200);};
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&ready){clearTimeout(syncT);push();}});
+window.addEventListener("pagehide",()=>{if(ready){clearTimeout(syncT);push();}});
+window.__wirdWipe=()=>{ready=false;const r=uref;if(r)deleteDoc(r).catch(()=>{});if(auth)signOut(auth).catch(()=>{});};
+window.__wirdMore=()=>{
+  const card=$id("acctCard");if(!card)return;
+  if(!user){card.style.display="none";return;}
+  card.style.display="";
+  $id("acctInfo").textContent="مسجّلة الدخول بحساب: "+(user.email||"Google");
+  $id("acctOut").onclick=async()=>{if(!confirm("تسجيل الخروج من حسابك؟ ستبقى بياناتك محفوظة في حسابك وعلى هذا الجهاز."))return;ready=false;try{await signOut(auth);}catch(e){}location.reload();};
+  $id("acctSync").onclick=async()=>{await push();toast("تمت المزامنة مع حسابك ✓");};
+};
+
+async function syncDown(u){
+  user=u;uref=doc(db,"users",u.uid);
+  const prevUid=store.get(AUTH_KEY);
+  let snap=null;
+  try{snap=await getDoc(uref);}catch(e){snap=null;}
+  const localRaw=store.get("wird.v1");
+  const localU=(ST.meta&&ST.meta.u)||0;
+  if(snap&&snap.exists()){
+    const cloud=snap.data(),cloudU=cloud.u||0;
+    const foreign=!!(prevUid&&prevUid!==u.uid);
+    if(foreign||cloudU>localU||!localRaw){
+      if(cloud.json&&cloud.json!==localRaw){
+        store.set("wird.v1",cloud.json);store.set(AUTH_KEY,u.uid);location.reload();return;
+      }
+      ready=true;
+    }else if(cloudU<localU){ready=true;await push();}
+    else ready=true;
+  }else if(snap){
+    if(prevUid&&prevUid!==u.uid){
+      store.set("wird.v1",JSON.stringify(defaults()));store.set(AUTH_KEY,u.uid);location.reload();return;
+    }
+    ready=true;await push();
+  }else{
+    if(prevUid&&prevUid!==u.uid){
+      ready=false;user=null;
+      try{await signOut(auth);}catch(e){}
+      authUI("in","تعذّر تحميل بيانات الحساب، تحقّقي من الاتصال ثم حاولي مجددًا.");return;
+    }
+    ready=true;
+  }
+  store.set(AUTH_KEY,u.uid);
+  hideGate();
+}
+
+function authUI(mode,preErr){
+  showGate();
+  gateBody.innerHTML='<button class="gbtn" id="gGoogle">'+GLOGO+'المتابعة بحساب Google</button>'
+  +'<div class="gdiv">أو بالبريد الإلكتروني</div>'
+  +'<div class="gfield"><label>البريد الإلكتروني</label><input id="gEmail" type="email" autocomplete="email" inputmode="email" placeholder="name@example.com"></div>'
+  +'<div class="gfield"><label>كلمة السر</label><input id="gPass" type="password" autocomplete="'+(mode==="up"?"new-password":"current-password")+'" placeholder="••••••••"></div>'
+  +'<div class="gerr" id="gErr"></div><div class="gok" id="gOk"></div>'
+  +'<button class="btn" id="gGo" style="width:100%;padding:12px;border-radius:14px;font-size:16px">'+(mode==="up"?"إنشاء حساب":"تسجيل الدخول")+'</button>'
+  +'<div class="gnote">'+(mode==="up"?'لديكِ حساب بالفعل؟ <a id="gToggle">تسجيل الدخول</a>':'ليس لديكِ حساب؟ <a id="gToggle">إنشاء حساب جديد</a>')
+  +(mode==="in"?'&nbsp;&nbsp;·&nbsp;&nbsp;<a id="gForgot">نسيتِ كلمة السر؟</a>':"")+'</div>'
+  +'<p class="gnote" style="font-size:12.5px;line-height:1.8">تُحفظ عدّاداتك وخطتك وسلسلة أيامك في حسابك بأمان، فتجدينها كما تركتِها من أي جهاز.</p>';
+  if(preErr)showErr(preErr);
+  $id("gToggle").onclick=()=>authUI(mode==="up"?"in":"up");
+  $id("gGoogle").onclick=async()=>{
+    showErr("");
+    try{await signInWithPopup(auth,provider);}
+    catch(e){
+      if(e&&["auth/popup-blocked","auth/cancelled-popup-request","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].indexOf(e.code)>=0){
+        try{await signInWithRedirect(auth,provider);}catch(e2){showErr(errAr(e2&&e2.code));}
+      }else if(e&&e.code!=="auth/popup-closed-by-user"){showErr(errAr(e&&e.code));}
+    }
+  };
+  $id("gGo").onclick=async()=>{
+    showErr("");
+    const em=$id("gEmail").value.trim(),pw=$id("gPass").value;
+    if(!em||!pw){showErr("اكتبي البريد الإلكتروني وكلمة السر.");return;}
+    if(mode==="up"&&pw.length<6){showErr("كلمة السر يجب ألا تقل عن ٦ أحرف.");return;}
+    const b=$id("gGo");b.disabled=true;b.textContent="جاري…";
+    try{
+      if(mode==="up")await createUserWithEmailAndPassword(auth,em,pw);
+      else await signInWithEmailAndPassword(auth,em,pw);
+    }catch(e){b.disabled=false;b.textContent=mode==="up"?"إنشاء حساب":"تسجيل الدخول";showErr(errAr(e&&e.code));}
+  };
+  const f=$id("gForgot");
+  if(f)f.onclick=async()=>{
+    showErr("");
+    const em=$id("gEmail").value.trim();
+    if(!em){showErr("اكتبي بريدك الإلكتروني أولًا، ثم اضغطي هنا.");return;}
+    try{await sendPasswordResetEmail(auth,em);showOk("أرسلنا رابط إعادة تعيين كلمة السر إلى بريدك.");}
+    catch(e){showErr(errAr(e&&e.code));}
+  };
+}
+
+try{
+  const app=initializeApp(firebaseConfig);
+  auth=getAuth(app);db=getFirestore(app);provider=new GoogleAuthProvider();
+  window.__wirdFbOk=true;clearTimeout(window.__wirdGateT);
+}catch(e){
+  gateBody.innerHTML='<p class="muted" style="text-align:center">تعذّر تشغيل خدمة تسجيل الدخول.</p>';
+  throw e;
+}
+getRedirectResult(auth).then(r=>{if(r&&r.user)gateLoading("جاري تسجيل الدخول…");}).catch(e=>{if(e&&e.code)showErr(errAr(e.code));});
+onAuthStateChanged(auth,u=>{
+  if(u){gateLoading("جاري تحميل بياناتك…");syncDown(u);}
+  else{user=null;ready=false;authUI("in");}
+});
 </script>
 </body>
 </html>
