@@ -581,7 +581,7 @@ function qRead(){
   const cL=ST.listen,reps=[1,2,3,5,7,10,20,40,0];
   const rf=x=>'<option value="'+x+'"'+(cL.rep===x?" selected":"")+'>'+(x?n(x)+(x===1?" مرة":" مرات"):"بلا نهاية")+'</option>';
   const rrf=x=>'<option value="'+x+'"'+(cL.rr===x?" selected":"")+'>'+(x?n(x)+(x===1?" مرة":" مرات"):"بلا نهاية")+'</option>';
-  const lf=Math.min(Math.max(cL.from||a0,1),SC[s-1]),lt=Math.min(Math.max(cL.to||a1,1),SC[s-1]);
+  const lf=a0,lt=a1;
   if(ST.reader.lp)html+='<div class="card" id="lpanel"><h2 style="margin-top:0">الاستماع والتكرار</h2>'
   +'<div class="grid2"><div><label class="f" style="margin-top:0">القارئ</label><select id="qpr">'+RECITERS.map(r=>'<option value="'+r[0]+'"'+(cL.reciter===r[0]?" selected":"")+'>'+r[1]+'</option>').join("")+'</select></div>'
   +'<div><label class="f" style="margin-top:0">السرعة</label><select id="qpsp">'+[.75,.85,1,1.15,1.25,1.5].map(x=>'<option value="'+x+'"'+(cL.speed===x?" selected":"")+'>'+n(x)+'×</option>').join("")+'</select></div></div>'
