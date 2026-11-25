@@ -149,6 +149,22 @@ select:focus,input:focus{outline:none;border-color:var(--g5);box-shadow:0 0 0 3p
 .mnw b{color:var(--g7);min-width:120px;flex-shrink:0;font-family:"Amiri Quran",serif;font-weight:400;font-size:20px}
 .mnbk{font-size:14px;color:var(--gold);font-weight:700;margin:12px 0 2px}
 .tfsrc{font-size:12px;color:var(--mute);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+
+/* التسميع */
+.tw{cursor:pointer;border-radius:6px;padding:0 2px;transition:background .25s,color .25s}
+.tw-cur{outline:2px solid var(--gold);border-radius:6px}
+.tw-ok{background:#dff3e4;color:#1c6b32}
+.tw-sub{background:#fbe3e3;color:#a02222;text-decoration:underline wavy #a02222 1px}
+.tw-del{background:#fdf0dc;color:#9a6a12;text-decoration:line-through}
+.tsm-rec{width:88px;height:88px;border-radius:50%;font-size:32px;border:none;background:#a02222;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.tsm-rec.on{animation:tsmPulse 1.5s infinite}
+@keyframes tsmPulse{0%{box-shadow:0 0 0 0 rgba(160,34,34,.4)}70%{box-shadow:0 0 0 20px rgba(160,34,34,0)}100%{box-shadow:0 0 0 0 rgba(160,34,34,0)}}
+.tsm-hide .qtxt .tw,.tsm-hide .qtxt .an{filter:blur(8px);pointer-events:none}
+.tsm-chip{border:1px solid var(--g4,#cbb);background:transparent;border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit;color:inherit}
+.tsm-chip.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.tsm-mist{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--g4,#cbb)}
+.tsm-mist:last-child{border-bottom:none}
+.tsm-mist b{font-size:20px}
 </style>
 </head>
 <body>
@@ -500,10 +516,308 @@ function showTafsirAudio(s){
   }).catch(function(){modal('<h3>التفسير الصوتي</h3><p class="muted">تعذّر تحميل قائمة التفسير الصوتي. تحقّقي من الاتصال وحاولي مجددًا.</p>');});
 }
 
+
+/* ===== التسميع ===== */
+const TSM_PROXY="https://wird-tasmee3-proxy.ginasamir383.workers.dev/transcribe";
+const TSM_TOK="N0MSIoVOH_5BL2rHi0JHq3FZT5GoC6bUPlMqViDTsF4";
+const PG_STARTS="1001,2001,2006,2017,2025,2030,2038,2049,2058,2062,2070,2077,2084,2089,2094,2102,2106,2113,2120,2127,2135,2142,2146,2154,2164,2170,2177,2182,2187,2191,2197,2203,2211,2216,2220,2225,2231,2234,2238,2246,2249,2253,2257,2260,2265,2270,2275,2282,2283,3001,3010,3016,3023,3030,3038,3046,3053,3062,3071,3078,3084,3092,3101,3109,3116,3122,3133,3141,3149,3154,3158,3166,3174,3181,3187,3195,4001,4007,4012,4015,4020,4024,4027,4034,4038,4045,4052,4060,4066,4075,4080,4087,4092,4095,4102,4106,4114,4122,4128,4135,4141,4148,4155,4163,4171,4176,5003,5006,5010,5014,5018,5024,5032,5037,5042,5046,5051,5058,5065,5071,5077,5083,5090,5096,5104,5109,5114,6001,6009,6019,6028,6036,6045,6053,6060,6069,6074,6082,6091,6095,6102,6111,6119,6125,6132,6138,6143,6147,6152,6158,7001,7012,7023,7031,7038,7044,7052,7058,7068,7074,7082,7088,7096,7105,7121,7131,7138,7144,7150,7156,7160,7164,7171,7179,7188,7196,8001,8009,8017,8026,8034,8041,8046,8053,8062,8070,9001,9007,9014,9021,9027,9032,9037,9041,9048,9055,9062,9069,9073,9080,9087,9094,9100,9107,9112,9118,9123,10001,10007,10015,10021,10026,10034,10043,10054,10062,10071,10079,10089,10098,10107,11006,11013,11020,11029,11038,11046,11054,11063,11072,11082,11089,11098,11109,11118,12005,12015,12023,12031,12038,12044,12053,12064,12070,12079,12087,12096,12104,13001,13006,13014,13019,13029,13035,13043,14006,14011,14019,14025,14034,14043,15001,15016,15032,15052,15071,15091,16007,16015,16027,16035,16043,16055,16065,16073,16080,16088,16094,16103,16111,16119,17001,17008,17018,17028,17039,17050,17059,17067,17076,17087,17097,17105,18005,18016,18021,18028,18035,18046,18054,18062,18075,18084,18098,19001,19012,19026,19039,19052,19065,19077,19096,20013,20038,20052,20065,20077,20088,20099,20114,20126,21001,21011,21025,21036,21045,21058,21073,21082,21091,21102,22001,22006,22016,22024,22031,22039,22047,22056,22065,22073,23001,23018,23028,23043,23060,23075,23090,23105,24001,24011,24021,24028,24032,24037,24044,24054,24059,24062,25003,25012,25021,25033,25044,25056,25068,26001,26020,26040,26061,26084,26112,26137,26160,26184,26207,27001,27014,27023,27036,27045,27056,27064,27077,27089,28006,28014,28022,28029,28036,28044,28051,28060,28071,28078,28085,29007,29015,29024,29031,29039,29046,29053,29064,30006,30016,30025,30033,30042,30051,31001,31012,31020,31029,32001,32012,32021,33001,33007,33016,33023,33031,33036,33044,33051,33055,33063,34001,34008,34015,34023,34032,34040,34049,35004,35012,35019,35031,35039,35045,36013,36028,36041,36055,36071,37001,37025,37052,37077,37103,37127,37154,38001,38017,38027,38043,38062,38084,39006,39011,39022,39032,39041,39048,39057,39068,39075,40008,40017,40026,40034,40041,40050,40059,40067,40078,41001,41012,41021,41030,41039,41047,42001,42011,42016,42023,42032,42045,42052,43011,43023,43034,43048,43061,43074,44001,44019,44040,45001,45014,45023,45033,46006,46015,46021,46029,47001,47012,47020,47030,48001,48010,48016,48024,48029,49005,49012,50001,50016,50036,51007,51031,51052,52015,52032,53001,53027,53045,54007,54028,54050,55017,55041,55068,56017,56051,56077,57004,57012,57019,57025,58001,58007,58012,58022,59004,59010,59017,60001,60006,60012,61006,62001,62009,63005,64001,64010,65001,65006,66001,66008,67001,67013,67027,68016,68043,69009,69035,70011,70040,71011,72001,72014,73001,73020,74018,74048,75020,76006,76026,77020,78001,78031,79016,80001,81001,82001,83007,83035,85001,86001,87016,89001,89024,91001,92015,95001,97001,98008,100010,103001,106001,109001,112001".split(",").map(x=>({s:Math.floor(+x/1000),a:+x%1000}));
+const tsmStore=()=>{ST.tasmee3=ST.tasmee3||{keepAudio:false,sessions:[]};return ST.tasmee3;};
+let tsm=null; // الجلسة الجارية (لا تُحفظ)
+function tsmNorm(w){return String(w).replace(/[ً-ٰٟۖ-ۭـ]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/ؤ/g,"و").replace(/ئ/g,"ي");}
+function tsmSim(a,b){if(!a||!b)return false;if(Math.abs(a.length-b.length)>2)return false;let d=0;const L=Math.min(a.length,b.length);for(let x=0;x<L;x++)if(a[x]!==b[x])d++;d+=Math.abs(a.length-b.length);return d<=1;}
+function tsmRef(segs){const R=[];segs.forEach(g=>{for(let a=g.a0;a<=g.a1;a++){ayahText(g.s,a).split(/\s+/).filter(Boolean).forEach((w,wi)=>R.push({s:g.s,a:a,wi:wi,w:w}));}});return R;}
+function tsmSegsGi(g0,g1){const segs=[];let g=g0;while(g<=g1){const f=fromGi(g);const last=gi(f.s,SC[f.s-1]);const end=Math.min(g1,last);segs.push({s:f.s,a0:f.a,a1:fromGi(end).a});g=end+1;}return segs;}
+function tsmAlign(ref,hyp){ // ref/hyp: مصفوفات كلمات مُسوّاة
+  const m=ref.length,k=hyp.length,INF=1e9;
+  const dp=[],bp=[];
+  for(let i=0;i<=m;i++){dp.push(new Array(k+1).fill(0));bp.push(new Array(k+1).fill(0));}
+  for(let i=1;i<=m;i++){dp[i][0]=i;bp[i][0]=1;}
+  for(let j=1;j<=k;j++){dp[0][j]=j;bp[0][j]=2;}
+  for(let i=1;i<=m;i++)for(let j=1;j<=k;j++){
+    const sc=ref[i-1]===hyp[j-1]?0:(tsmSim(ref[i-1],hyp[j-1])?0.6:1);
+    const sub=dp[i-1][j-1]+sc,del=dp[i-1][j]+1,ins=dp[i][j-1]+1;
+    if(sub<=del&&sub<=ins){dp[i][j]=sub;bp[i][j]=0;}
+    else if(del<=ins){dp[i][j]=del;bp[i][j]=1;}
+    else{dp[i][j]=ins;bp[i][j]=2;}
+  }
+  const ops=[];let i=m,j=k;
+  while(i>0||j>0){const b=bp[i][j];
+    if(i>0&&j>0&&b===0){ops.push({t:ref[i-1]===hyp[j-1]?"ok":"sub",ri:i-1,hi:j-1});i--;j--;}
+    else if(i>0&&(j===0||b===1)){ops.push({t:"del",ri:i-1});i--;}
+    else{ops.push({t:"ins",hi:j-1});j--;}}
+  return ops.reverse();
+}
+function tsmStripOpening(hyp,refFirst){ // إسقاط الاستعاذة والبسملة من بداية التسجيل إن لم تكن ضمن النص
+  const N=hyp.map(h=>h.n);
+  const bas=["بسم","الله","الرحمن","الرحيم"],ist=["اعوذ","بالله","من","الشيطان","الرجيم"];
+  let cut=0;
+  if(N.length>=5&&ist.every((w,i)=>N[i]===w))cut=5;
+  const refStartsBas=refFirst.slice(0,4).every((w,i)=>tsmNorm(w)===bas[i]);
+  if(!refStartsBas&&N.length>=cut+4&&bas.every((w,i)=>N[cut+i]===w))cut+=4;
+  return hyp.slice(cut);
+}
+function tsmIDB(){return new Promise((res,rej)=>{const r=indexedDB.open("wird-tsm",1);r.onupgradeneeded=()=>r.result.createObjectStore("audio");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function tsmIDBput(id,blob){try{const db=await tsmIDB();return new Promise(res=>{const t=db.transaction("audio","readwrite");t.objectStore("audio").put(blob,id);t.oncomplete=res;t.onerror=res;});}catch(e){}}
+async function tsmIDBget(id){try{const db=await tsmIDB();return new Promise(res=>{const q=db.transaction("audio").objectStore("audio").get(id);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null);});}catch(e){return null;}}
+async function tsmIDBdel(id){try{const db=await tsmIDB();return new Promise(res=>{const t=db.transaction("audio","readwrite");t.objectStore("audio").delete(id);t.oncomplete=res;t.onerror=res;});}catch(e){}}
+async function tsmIDBclear(){try{const db=await tsmIDB();return new Promise(res=>{const t=db.transaction("audio","readwrite");t.objectStore("audio").clear();t.oncomplete=res;t.onerror=res;});}catch(e){}}
+const tsmWbw=(s,a,wi)=>"https://audio.qurancdn.com/wbw/"+pad3(s)+"_"+pad3(a)+"_"+pad3(wi+1)+".mp3";
+function tsmPlayURL(url,seek){const a=new Audio(url);if(seek)a.addEventListener("loadedmetadata",()=>{a.currentTime=Math.max(0,seek-0.08);});a.play().catch(()=>toast("تعذّر تشغيل الصوت."));}
+async function tsmSend(blob){const ext=blob.type.includes("mp4")?"m4a":(blob.type.includes("webm")?"webm":"m4a");
+  const fd=new FormData();fd.append("file",blob,"rec."+ext);fd.append("model","whisper-large-v3");fd.append("language","ar");
+  const r=await fetch(TSM_PROXY,{method:"POST",headers:{"X-Wird-Auth":TSM_TOK},body:fd});
+  if(!r.ok){let m="تعذّر التفريغ";try{const j=await r.json();if(j&&j.error)m+=": "+j.error;}catch(e){}throw new Error(m);}
+  return r.json();}
+function tsmRangeLabel(segs){if(segs.length===1){const g=segs[0];return rangeLabel(g.s,g.a0,g.a1);}return "من "+rangeLabel(segs[0].s,segs[0].a0,segs[0].a0)+" إلى "+rangeLabel(segs[segs.length-1].s,segs[segs.length-1].a1,segs[segs.length-1].a1);}
+
+function pgTasmee3(p){
+  const T=tsmStore();
+  if(p[0]==="log")return tsmLog();
+  if(tsm&&tsm.active)return tsmSession();
+  const H=ST.hifz,hasWird=H&&H.started&&nextPortion(H);
+  const sess=T.sessions,avg=sess.length?Math.round(sess.reduce((x,y)=>x+y.score,0)/sess.length):null;
+  let html='<div class="row sp"><h1 style="margin:0">التسميع</h1><a class="btn soft sm" style="text-decoration:none" href="#/tasmee3/log">السجل</a></div>';
+  html+='<div class="card"><p class="muted" style="margin-top:0">سمّعي وِردك بصوتك: يتابع التطبيق تلاوتك كلمة كلمة بالمقارنة مع النص العثماني، ويُظهر لك مواضع الخلل فورًا. لا يُغني هذا عن التسميع على معلّمة، لكنه يعينك في المراجعة الذاتية.</p></div>';
+  html+='<div class="card"><h2>ما الذي تسمّعينه؟</h2>'
+    +'<div class="row" style="flex-wrap:wrap;gap:8px" id="tsmKind">'
+    +'<button class="tsm-chip on" data-k="surah">مقطع من سورة</button>'
+    +'<button class="tsm-chip" data-k="juz">جزء كامل</button>'
+    +'<button class="tsm-chip" data-k="page">صفحة من المصحف</button>'
+    +'<button class="tsm-chip" data-k="wird"'+(hasWird?'':' disabled')+'>وِرد حفظ اليوم</button></div>'
+    +'<div id="tsmPick" style="margin-top:12px"></div>'
+    +'<h2 style="margin-top:14px">الوضع</h2><div class="row" style="flex-wrap:wrap;gap:8px" id="tsmMode">'
+    +'<button class="tsm-chip on" data-m="inst">تصحيح فوري (آية آية)</button>'
+    +'<button class="tsm-chip" data-m="test">اختبار (المقطع كاملًا والنص مخفي)</button></div>'
+    +'<p style="margin-top:14px"><button class="btn" id="tsmGo">ابدئي التسميع</button></p></div>';
+  if(sess.length)html+='<div class="card row" style="gap:16px"><div class="ring" style="--p:'+(avg||0)+'"><div>'+n(avg)+'٪<small>متوسط الدقة</small></div></div><div class="grow"><div class="muted">جلسات مسجّلة: <b>'+n(sess.length)+'</b></div><div class="muted">آخر جلسة: '+esc(sess[0].lbl)+' — '+n(sess[0].score)+'٪</div></div></div>';
+  html+='<div class="card"><h2>الخصوصية</h2>'
+    +'<label class="row" style="gap:8px"><span class="sw"><input type="checkbox" id="tsmKeep"'+(T.keepAudio?' checked':'')+'><i></i></span><span>الاحتفاظ بتسجيلاتي على هذا الجهاز لأعاود الاستماع إليها</span></label>'
+    +'<p class="muted">يُرسل الصوت لخادم التفريغ ليُحوَّل إلى نص يقارَن بالمصحف، ولا يُحفظ التسجيل على الخادم. عند تفعيل الاحتفاظ يبقى التسجيل على جهازك فقط، ويمكنك حذفه في أي وقت من السجل.</p>'
+    +'<p class="muted">تقييم أحكام التجويد من الصوت: <b>لم يتم تقييمه</b> — المعروض داخل الجلسة تلوين قواعد النص للاستذكار النظري فقط.</p></div>';
+  view.innerHTML=html;
+  $("#tsmKeep").onchange=e=>{T.keepAudio=e.target.checked;save();};
+  let kind="surah",mode="inst";
+  const pick=()=>{
+    const el=$("#tsmPick");
+    if(kind==="surah"){el.innerHTML='<div class="row" style="flex-wrap:wrap;gap:8px"><select id="tkS" style="flex:2;min-width:130px">'+SN.map((x,i)=>'<option value="'+(i+1)+'">'+n(i+1)+'. '+x+'</option>').join("")+'</select><select id="tkA" style="flex:1;min-width:90px"></select><select id="tkB" style="flex:1;min-width:90px"></select></div>';
+      const S=$("#tkS"),A=$("#tkA"),B=$("#tkB");
+      const fill=()=>{const s=+S.value,c=SC[s-1];A.innerHTML='';B.innerHTML='';for(let i=1;i<=c;i++){A.innerHTML+='<option value="'+i+'">من آية '+n(i)+'</option>';B.innerHTML+='<option value="'+i+'">إلى آية '+n(i)+'</option>';}A.value=1;B.value=Math.min(c,7);};
+      S.onchange=fill;fill();}
+    else if(kind==="juz"){el.innerHTML='<select id="tkJ" style="width:100%">'+JUZ.map((_,i)=>'<option value="'+(i+1)+'">الجزء '+n(i+1)+'</option>').join("")+'</select>';}
+    else if(kind==="page"){el.innerHTML='<select id="tkP" style="width:100%">'+Array.from({length:604},(_,i)=>'<option value="'+(i+1)+'">صفحة '+n(i+1)+'</option>').join("")+'</select>';}
+    else{const np=hasWird?nextPortion(ST.hifz):null;el.innerHTML=np?'<p class="muted" style="margin:0">'+rangeLabel(np.s,np.a,np.b)+'</p>':'<p class="muted" style="margin:0">لا توجد خطة حفظ فعّالة.</p>';}
+  };
+  pick();
+  $$("#tsmKind .tsm-chip").forEach(b=>b.onclick=()=>{if(b.disabled)return;$$("#tsmKind .tsm-chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");kind=b.dataset.k;pick();});
+  $$("#tsmMode .tsm-chip").forEach(b=>b.onclick=()=>{$$("#tsmMode .tsm-chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");mode=b.dataset.m;});
+  $("#tsmGo").onclick=()=>{
+    let segs=null,lbl="";
+    if(kind==="surah"){const s=+$("#tkS").value;let a0=+$("#tkA").value,a1=+$("#tkB").value;if(a1<a0){const t=a0;a0=a1;a1=t;}segs=[{s:s,a0:a0,a1:a1}];lbl=rangeLabel(s,a0,a1);}
+    else if(kind==="juz"){const j=+$("#tkJ").value;const g0=JUZ_GI[j-1],g1=j<30?JUZ_GI[j]-1:TOTAL-1;segs=tsmSegsGi(g0,g1);lbl="الجزء "+n(j);}
+    else if(kind==="page"){const p=+$("#tkP").value;const st=PG_STARTS[p-1];const g0=gi(st.s,st.a),g1=p<604?gi(PG_STARTS[p].s,PG_STARTS[p].a)-1:TOTAL-1;segs=tsmSegsGi(g0,g1);lbl="صفحة "+n(p);}
+    else{if(!hasWird)return;const np=nextPortion(ST.hifz);segs=[{s:np.s,a0:np.a,a1:np.b}];lbl=rangeLabel(np.s,np.a,np.b);}
+    if(mode==="test"){const wc=tsmRef(segs).length;if(wc>900&&!confirm("هذا المقطع طويل ("+n(wc)+" كلمة) وقد يستغرق التفريغ وقتًا ويستهلك حصة اليوم. المتابعة؟"))return;}
+    tsmStart(mode,segs,lbl);
+  };
+}
+
+function tsmStart(mode,segs,lbl){
+  const ref=tsmRef(segs);
+  tsm={active:true,mode:mode,segs:segs,lbl:lbl,ref:ref,idx:0,hide:mode==="test",results:[],pieces:[],blobUrl:null,busy:false};
+  tsmSession();
+}
+function tsmSession(){
+  const T=tsmStore();
+  const done=tsm.results.reduce((x,r)=>x+r.stats.ok,0),tot=tsm.results.reduce((x,r)=>x+r.stats.ok+r.stats.sub+r.stats.del,0);
+  let html='<div class="row sp"><h1 style="margin:0;font-size:22px">'+esc(tsm.lbl)+'</h1><button class="btn ghost sm" id="tsmEnd">إنهاء</button></div>';
+  html+='<div class="card"><div class="row sp"><span class="pill">'+(tsm.mode==="inst"?"تصحيح فوري":"اختبار")+'</span>'
+    +'<button class="btn soft sm" id="tsmHide">'+(tsm.hide?"إظهار النص":"إخفاء النص")+'</button></div>'
+    +'<div class="qtxt'+(tsm.hide?" tsm-hide":"")+'" id="tsmText" style="margin-top:10px;font-size:24px;line-height:2.1">';
+  let lastS=0,lastA=0,wi=0;
+  tsm.ref.forEach((r,i)=>{
+    if(r.s!==lastS){html+='<div class="muted" style="font-size:14px;margin-top:8px">سورة '+SN[r.s-1]+'</div>';lastS=r.s;lastA=0;}
+    if(r.a!==lastA){if(lastA)html+='<span class="an">﴿'+n(lastA)+'﴾</span> ';lastA=r.a;}
+    const res=tsm.wordRes?tsm.wordRes[i]:null;
+    html+='<span class="tw'+(res?" tw-"+res:"")+(i===tsm.cursor?" tw-cur":"")+'" data-i="'+i+'" data-s="'+r.s+'" data-a="'+r.a+'" data-wi="'+r.wi+'">'+esc(r.w)+'</span> ';
+  });
+  if(lastA)html+='<span class="an">﴿'+n(lastA)+'﴾</span>';
+  html+='</div>';
+  const totalAy=tsm.segs.reduce((x,g)=>x+(g.a1-g.a0+1),0);
+  if(tsm.mode==="inst"){
+    const cur=tsmCurAyah();
+    html+='<div class="row" style="margin-top:12px;align-items:center"><button class="tsm-rec'+(tsm.rec?" on":"")+'" id="tsmRec">'+(tsm.rec?"⏹":"🎙")+'</button><div class="grow" style="text-align:center"><div id="tsmStat" class="muted">'+(tsm.rec?"تسجّلين الآية "+n(tsm.idx+1)+" من "+n(totalAy)+"… اضغطي للإيقاف":(tsm.busy?"جارٍ تحليل التلاوة…":(cur?"آية "+n(tsm.idx+1)+" من "+n(totalAy)+" — اضغطي الميكروفون وسمّعيها":"اكتمل المقطع")))+'</div></div></div>';
+  }else{
+    html+='<div class="row" style="margin-top:12px;align-items:center"><button class="tsm-rec'+(tsm.rec?" on":"")+'" id="tsmRec">'+(tsm.rec?"⏹":"🎙")+'</button><div class="grow" style="text-align:center"><div id="tsmStat" class="muted">'+(tsm.rec?"تسجّلين المقطع كاملًا… اضغطي عند الانتهاء":(tsm.busy?"جارٍ تحليل التلاوة…":"اضغطي الميكروفون وسمّعي المقطع كاملًا من غير مصحف"))+'</div></div></div>';
+  }
+  if(tot)html+='<div class="muted" style="margin-top:8px">حتى الآن: '+n(done)+' من '+n(tot)+' كلمة صحيحة ('+n(Math.round(done/tot*100))+'٪)</div>';
+  html+='</div>';
+  html+='<div class="card"><h2>مراجعة التجويد (من النص)</h2><p class="muted" style="margin-top:-6px">تلوين قواعد النص للاستذكار النظري. تقييم الأحكام من صوتك: <b>لم يتم تقييمه</b>.</p><div class="quran" style="font-size:22px;line-height:2">';
+  tsm.segs.forEach(g=>{for(let a=g.a0;a<=g.a1;a++)html+='<span>'+tajColor(ayahText(g.s,a))+'<span class="an">﴿'+n(a)+'﴾</span></span> ';});
+  html+='</div></div>';
+  view.innerHTML=html;
+  $("#tsmEnd").onclick=()=>tsmFinish(true);
+  $("#tsmHide").onclick=()=>{tsm.hide=!tsm.hide;tsmSession();};
+  $$("#tsmText .tw").forEach(el=>el.onclick=()=>{if(tsm.hide)return;tsmPlayURL(tsmWbw(+el.dataset.s,+el.dataset.a,+el.dataset.wi));});
+  $("#tsmRec").onclick=()=>{if(tsm.busy)return;tsm.rec?tsmStop():tsmRecord();};
+  if(tsm.report)tsmRenderReport();
+}
+function tsmCurAyah(){
+  if(tsm.mode!=="inst")return null;
+  let count=0;
+  for(const g of tsm.segs){for(let a=g.a0;a<=g.a1;a++){if(count===tsm.idx)return{s:g.s,a:a};count++;}}
+  return null;
+}
+async function tsmRecord(){
+  if(!navigator.mediaDevices||!window.MediaRecorder){toast("المتصفح لا يدعم التسجيل الصوتي.");return;}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true});}
+  catch(e){toast("أذني للتطبيق باستخدام الميكروفون من إعدادات المتصفح.");return;}
+  const mime=MediaRecorder.isTypeSupported("audio/mp4")?"audio/mp4":(MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"");
+  const rec=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+  tsm.chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)tsm.chunks.push(e.data);};
+  rec.start(250);
+  tsm.rec=rec;tsm.stream=stream;tsm.recStart=Date.now();
+  // إيقاف تلقائي عند السكوت (وضع التصحيح الفوري)
+  if(tsm.mode==="inst"){
+    try{const ctx=new (window.AudioContext||window.webkitAudioContext)();tsm.actx=ctx;
+      const src=ctx.createMediaStreamSource(stream),an=ctx.createAnalyser();an.fftSize=1024;src.connect(an);
+      const buf=new Uint8Array(an.fftSize);tsm.lastLoud=Date.now();tsm.heardLoud=false;
+      tsm.silTimer=setInterval(()=>{an.getByteTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++){const v=(buf[i]-128)/128;s+=v*v;}const rms=Math.sqrt(s/buf.length);
+        if(rms>0.02){tsm.lastLoud=Date.now();tsm.heardLoud=true;}
+        else if(tsm.heardLoud&&Date.now()-tsm.lastLoud>1600&&Date.now()-tsm.recStart>2500)tsmStop();},120);
+    }catch(e){}
+  }
+  tsmSession();
+}
+function tsmStop(){
+  if(!tsm.rec)return;
+  const rec=tsm.rec;tsm.rec=null;
+  clearInterval(tsm.silTimer);
+  if(tsm.actx){try{tsm.actx.close();}catch(e){}tsm.actx=null;}
+  rec.onstop=async()=>{
+    if(tsm.stream){tsm.stream.getTracks().forEach(t=>t.stop());tsm.stream=null;}
+    const blob=new Blob(tsm.chunks,{type:rec.mimeType||"audio/mp4"});
+    if(blob.size<1500){toast("التسجيل قصير جدًا. أعيدي المحاولة.");tsmSession();return;}
+    tsm.busy=true;tsmSession();
+    try{
+      const j=await tsmSend(blob);
+      let hyp=(j.words||[]).map(w=>({w:String(w.word||"").trim(),t0:w.start||0,t1:w.end||0})).filter(w=>w.w);
+      hyp=hyp.map(h=>({w:h.w,t0:h.t0,t1:h.t1,n:tsmNorm(h.w)})).filter(h=>h.n);
+      if(tsm.mode==="inst")tsmApplyAyah(blob,hyp);else tsmApplyAll(blob,hyp);
+    }catch(e){toast(e.message||"تعذّر تحليل التسجيل. حاولي مجددًا.");}
+    tsm.busy=false;tsmSession();
+  };
+  rec.stop();
+}
+function tsmApplyAyah(blob,hyp){
+  const cur=tsmCurAyah();if(!cur)return;
+  const ri=[];tsm.ref.forEach((r,i)=>{if(r.s===cur.s&&r.a===cur.a)ri.push(i);});
+  const refW=ri.map(i=>tsm.ref[i].w);
+  hyp=tsmStripOpening(hyp,refW);
+  const ops=tsmAlign(refW.map(tsmNorm),hyp.map(h=>h.n));
+  tsm.wordRes=tsm.wordRes||{};
+  const stats={ok:0,sub:0,del:0,ins:0},mist=[];
+  let step=0;
+  ops.forEach(op=>{
+    if(op.t==="ok"){stats.ok++;const gi=ri[op.ri];setTimeout(()=>{tsm.wordRes[gi]="ok";tsmPaint(gi);},step++*110);}
+    else if(op.t==="sub"){stats.sub++;const gi=ri[op.ri];setTimeout(()=>{tsm.wordRes[gi]="sub";tsmPaint(gi);},step++*110);mist.push({gi:gi,s:tsm.ref[gi].s,a:tsm.ref[gi].a,wi:tsm.ref[gi].wi,ref:tsm.ref[gi].w,heard:hyp[op.hi].w,kind:"sub"});}
+    else if(op.t==="del"){stats.del++;const gi=ri[op.ri];setTimeout(()=>{tsm.wordRes[gi]="del";tsmPaint(gi);},step++*110);mist.push({gi:gi,s:tsm.ref[gi].s,a:tsm.ref[gi].a,wi:tsm.ref[gi].wi,ref:tsm.ref[gi].w,heard:"",kind:"del"});}
+    else{stats.ins++;}
+  });
+  const piece={id:"p"+Date.now()+"_"+tsm.idx,s:cur.s,a:cur.a,blob:blob,hyp:hyp};
+  tsm.pieces.push(piece);
+  tsm.results.push({s:cur.s,a:cur.a,stats:stats,mist:mist,piece:piece.id});
+  if(stats.sub+stats.del===0)toast("أحسنتِ، الآية صحيحة");
+  else toast("عندك "+n(stats.sub+stats.del)+" كلمة تحتاج مراجعة في هذه الآية");
+  tsm.idx++;
+  if(!tsmCurAyah())setTimeout(()=>tsmFinish(false),Math.min(step*110+400,4000));
+}
+function tsmApplyAll(blob,hyp){
+  const refW=tsm.ref.map(r=>r.w);
+  hyp=tsmStripOpening(hyp,refW);
+  const ops=tsmAlign(refW.map(tsmNorm),hyp.map(h=>h.n));
+  tsm.wordRes=tsm.wordRes||{};
+  const stats={ok:0,sub:0,del:0,ins:0},mist=[];const insWords=[];
+  ops.forEach(op=>{
+    if(op.t==="ok"){stats.ok++;tsm.wordRes[op.ri]="ok";}
+    else if(op.t==="sub"){stats.sub++;tsm.wordRes[op.ri]="sub";mist.push({gi:op.ri,s:tsm.ref[op.ri].s,a:tsm.ref[op.ri].a,wi:tsm.ref[op.ri].wi,ref:tsm.ref[op.ri].w,heard:hyp[op.hi].w,kind:"sub",t0:hyp[op.hi].t0,t1:hyp[op.hi].t1});}
+    else if(op.t==="del"){stats.del++;tsm.wordRes[op.ri]="del";mist.push({gi:op.ri,s:tsm.ref[op.ri].s,a:tsm.ref[op.ri].a,wi:tsm.ref[op.ri].wi,ref:tsm.ref[op.ri].w,heard:"",kind:"del"});}
+    else{stats.ins++;if(insWords.length<12)insWords.push(hyp[op.hi].w);}
+  });
+  const piece={id:"p"+Date.now(),full:true,blob:blob,hyp:hyp};
+  tsm.pieces.push(piece);
+  tsm.results.push({full:true,stats:stats,mist:mist,ins:insWords,piece:piece.id});
+  tsmFinish(false);
+}
+function tsmPaint(gi){const el=$('#tsmText .tw[data-i="'+gi+'"]');if(el){el.classList.remove("tw-cur");el.classList.add("tw-"+(tsm.wordRes[gi]||"ok"));}}
+async function tsmFinish(manual){
+  if(!tsm)return;
+  const T=tsmStore();
+  const res=tsm.results;
+  const ok=res.reduce((x,r)=>x+r.stats.ok,0),sub=res.reduce((x,r)=>x+r.stats.sub,0),del=res.reduce((x,r)=>x+r.stats.del,0),ins=res.reduce((x,r)=>x+r.stats.ins,0);
+  const tot=ok+sub+del;
+  if(tot===0){tsm=null;toast("أُلغيت الجلسة قبل تسجيل أي كلمة.");return pgTasmee3([]);}
+  const score=Math.round(ok/tot*100);
+  const sid="s"+Date.now();
+  const entry={id:sid,d:new Date().toISOString(),lbl:tsm.lbl,mode:tsm.mode,score:score,words:tot,ok:ok,sub:sub,del:del,ins:ins,
+    mist:res.reduce((x,r)=>x.concat(r.mist.map(m=>({s:m.s,a:m.a,wi:m.wi,ref:m.ref,heard:m.heard,kind:m.kind,piece:r.piece,t0:m.t0,t1:m.t1}))),[]),
+    pieces:tsm.pieces.map(p=>({id:p.id,s:p.s,a:p.a,full:!!p.full}))};
+  if(T.keepAudio){for(const p of tsm.pieces)await tsmIDBput(p.id,p.blob);entry.audio=true;}
+  T.sessions.unshift(entry);if(T.sessions.length>60){const dropped=T.sessions.splice(60);dropped.forEach(x=>(x.pieces||[]).forEach(pp=>tsmIDBdel(pp.id)));}
+  save();
+  tsm.report=entry;tsm.active=false;
+  tsmSession();
+}
+function tsmRenderReport(){
+  const e=tsm.report;
+  const div=document.createElement("div");div.className="card";div.id="tsmRep";
+  let h='<div class="row sp"><h2 style="margin:0">النتيجة</h2><span class="pill '+(e.score>=90?"gold":(e.score>=70?"":"bad"))+'">'+n(e.score)+"٪</span></div>"
+    +'<p class="muted">'+n(e.ok)+" صحيحة من "+n(e.words)+" كلمة · استبدال: "+n(e.sub)+" · محذوفة: "+n(e.del)+(e.ins?" · زيادة: "+n(e.ins):"")+"</p>";
+  if(e.mist.length){
+    h+='<h3 style="margin:10px 0 4px">مواضع تحتاج مراجعة</h3>';
+    e.mist.slice(0,30).forEach((m,i)=>{
+      h+='<div class="tsm-mist"><b>'+esc(m.ref)+'</b><span class="pill">'+SN[m.s-1]+" "+n(m.a)+'</span><span class="muted">'+(m.kind==="del"?"لم تُذكر":("سُمعت: "+esc(m.heard)))+'</span><span class="grow"></span>'
+        +'<button class="btn soft sm" data-mw="'+i+'">الصواب ▶</button>'+(m.piece&&e.audio!==false?'<button class="btn ghost sm" data-mm="'+i+'">تسجيلك ▶</button>':"")+'</div>';
+    });
+    if(e.mist.length>30)h+='<p class="muted">+'+n(e.mist.length-30)+" موضعًا آخر في السجل.</p>";
+  }else h+='<p>ما شاء الله، لا أخطاء في هذا التسميع.</p>';
+  h+='<p class="muted" style="margin-top:10px">دلالة الدقة: المطابقة تتم على النطق بعد توحيد الرسم، فالخطأ الواحد قد يكون مجرد اختلاف لفظي بسيط، والأهم مراجعة المواضع المعلَّمة.</p>';
+  h+='<div class="row" style="margin-top:8px"><button class="btn" id="tsmAgain">تسميع جديد</button><a class="btn soft" style="text-decoration:none" href="#/tasmee3/log">السجل</a></div>';
+  div.innerHTML=h;view.appendChild(div);
+  div.querySelector("#tsmAgain").onclick=()=>{const R=tsm.report;tsm=null;pgTasmee3([]);};
+  div.querySelectorAll("[data-mw]").forEach(b=>b.onclick=()=>{const m=e.mist[+b.dataset.mw];tsmPlayURL(tsmWbw(m.s,m.a,m.wi));});
+  div.querySelectorAll("[data-mm]").forEach(b=>b.onclick=async()=>{const m=e.mist[+b.dataset.mm];
+    const piece=tsm.pieces.find(p=>p.id===m.piece);
+    let blob=piece&&piece.blob;
+    if(!blob)blob=await tsmIDBget(m.piece);
+    if(!blob){toast("التسجيل غير محفوظ على هذا الجهاز.");return;}
+    if(!tsm.blobUrl)tsm.blobUrl={};
+    if(!tsm.blobUrl[m.piece])tsm.blobUrl[m.piece]=URL.createObjectURL(blob);
+    tsmPlayURL(tsm.blobUrl[m.piece],m.t0||0);});
+  div.scrollIntoView({behavior:"smooth"});
+}
+function tsmLog(){
+  const T=tsmStore();
+  let html='<div class="row sp"><h1 style="margin:0">سجل التسميع</h1><a class="btn soft sm" style="text-decoration:none" href="#/tasmee3">رجوع</a></div>';
+  if(!T.sessions.length)html+='<div class="card"><p class="muted">لا جلسات بعد. ابدئي أول تسميع من صفحة التسميع.</p></div>';
+  else{
+    html+='<div class="card">'+T.sessions.map(e=>'<div class="tsm-mist"><b>'+esc(e.lbl)+'</b><span class="pill">'+(e.mode==="inst"?"فوري":"اختبار")+'</span><span class="pill '+(e.score>=90?"gold":(e.score>=70?"":"bad"))+'">'+n(e.score)+'٪</span><span class="muted">'+new Date(e.d).toLocaleDateString("ar-EG",{day:"numeric",month:"long"})+'</span><span class="grow"></span>'+(e.audio?'<button class="btn soft sm" data-play="'+e.id+'">التسجيل ▶</button>':"")+'<button class="btn bad sm" data-del="'+e.id+'">حذف</button></div>').join("")+'</div>';
+    html+='<div class="card"><div class="row"><button class="btn bad sm" id="tsmWipe">حذف كل الجلسات والتسجيلات</button></div></div>';
+  }
+  view.innerHTML=html;
+  $$("[data-del]").forEach(b=>b.onclick=async()=>{const i=T.sessions.findIndex(x=>x.id===b.dataset.del);if(i<0)return;(T.sessions[i].pieces||[]).forEach(p=>tsmIDBdel(p.id));T.sessions.splice(i,1);save();tsmLog();});
+  $$("[data-play]").forEach(b=>b.onclick=async()=>{const e=T.sessions.find(x=>x.id===b.dataset.play);if(!e)return;
+    const pieces=(e.pieces||[]);
+    if(!pieces.length){toast("لا تسجيل محفوظًا لهذه الجلسة.");return;}
+    for(const p of pieces){const blob=await tsmIDBget(p.id);if(blob){tsmPlayURL(URL.createObjectURL(blob));return;}}
+    toast("التسجيل غير موجود على هذا الجهاز.");});
+  const w=$("#tsmWipe");w&&(w.onclick=async()=>{if(!confirm("سيُحذف كل سجل التسميع وكل التسجيلات المحفوظة على هذا الجهاز. متأكدة؟"))return;T.sessions=[];save();await tsmIDBclear();tsmLog();toast("تم الحذف.");});
+}
+
 function route(){
   const h=location.hash.replace(/^#\/?/,"")||"home",parts=h.split("/"),r=parts[0];
   $$("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.r===r));
-  ({home:pgHome,quran:pgQuran,hifz:pgHifz,adhkar:pgAdhkar,more:pgMore,tajwid:pgTajwid}[r]||pgHome)(parts.slice(1));
+  ({home:pgHome,quran:pgQuran,hifz:pgHifz,adhkar:pgAdhkar,more:pgMore,tajwid:pgTajwid,tasmee3:pgTasmee3}[r]||pgHome)(parts.slice(1));
   window.scrollTo(0,0);$("#hij").textContent=hijriStr();
 }
 window.addEventListener("hashchange",route);
@@ -819,7 +1133,7 @@ function pgMore(){
   view.innerHTML='<h1>المزيد</h1>'
   +'<div class="card"><h2>اتجاه القبلة</h2><p class="muted" style="margin-top:-6px">من '+esc(L.name)+': <b>'+n(qb)+'°</b> من الشمال باتجاه عقارب الساعة.</p><div class="qib"><span class="nn">شمال</span><div class="nd" id="qn" style="transform:rotate('+qb+'deg)"></div></div><div class="row" style="justify-content:center"><button class="btn soft sm" id="qc">تشغيل البوصلة (للهاتف)</button></div><p class="muted" id="qm" style="text-align:center"></p></div>'
   +'<div class="card"><h2>المسبحة</h2><div class="cnt" id="tc">'+n(ST.tasbih.count)+'</div><div class="row" style="justify-content:center"><button class="btn" style="min-width:150px;min-height:56px;font-size:20px" id="tp">سبّحي</button><button class="btn ghost" id="tr0">تصفير</button></div><p class="muted" style="text-align:center">الإجمالي: '+n(ST.tasbih.total)+'</p></div>'
-  +'<div class="card"><h2>دروس التجويد</h2><p class="muted" style="margin-top:-6px">أحكام التلاوة باختصار، بأمثلة ملوّنة بنفس ألوان المصحف.</p><div class="row"><a class="btn soft sm" href="#/tajwid" style="text-decoration:none">افتحي الدروس</a></div></div>'
+  +'<div class="card"><h2>التسميع</h2><p class="muted" style="margin-top:-6px">سمّعي وِردك بصوتك: متابعة فورية كلمة كلمة مقابل النص العثماني، مع تقرير بمواضع الخلل وصوت القارئ النموذجي لكل كلمة.</p><div class="row"><a class="btn soft sm" href="#/tasmee3" style="text-decoration:none">افتحي التسميع</a></div></div>'+'<div class="card"><h2>دروس التجويد</h2><p class="muted" style="margin-top:-6px">أحكام التلاوة باختصار، بأمثلة ملوّنة بنفس ألوان المصحف.</p><div class="row"><a class="btn soft sm" href="#/tajwid" style="text-decoration:none">افتحي الدروس</a></div></div>'
 +'<div class="card" id="acctCard" style="display:none"><h2>حسابك</h2><p class="muted" style="margin-top:-6px" id="acctInfo"></p><div class="row"><button class="btn soft sm" id="acctSync">مزامنة الآن</button><button class="btn bad sm" id="acctOut">تسجيل الخروج</button></div></div>'+'<div class="card"><h2>نسخة احتياطية</h2><p class="muted" style="margin-top:-6px">انسخي بياناتك (الخطة والتقدّم) لتحتفظي بها أو لنقلها إلى جهاز آخر.</p><div class="row"><button class="btn soft sm" id="bkx">إظهار النسخة</button><button class="btn soft sm" id="bki">استعادة نسخة</button></div></div>'
   +'<div class="card"><h2>عن التطبيق</h2><p class="muted">مواقيت الصلاة تُحسب على جهازك دون إرسال موقعك لأي جهة. نص المصحف مضمَّن في الصفحة فيعمل بدون اتصال، أما الصوت فيحتاج إلى الإنترنت. عند تسجيل الدخول تُحفظ بياناتك وخطتك في حسابك بأمان لتفتحيها من أي جهاز، وتبقى نسخة على هذا الجهاز تعمل بدون اتصال.</p><button class="btn bad sm" id="wipe">مسح كل بياناتي</button></div>';
   window.__wirdMore&&window.__wirdMore();
