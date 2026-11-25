@@ -673,9 +673,12 @@ async function tsmRecord(){
   try{stream=await navigator.mediaDevices.getUserMedia({audio:true});}
   catch(e){toast("أذني للتطبيق باستخدام الميكروفون من إعدادات المتصفح.");return;}
   const mime=MediaRecorder.isTypeSupported("audio/mp4")?"audio/mp4":(MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"");
-  const rec=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+  let rec;
+  try{rec=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);}
+  catch(e){stream.getTracks().forEach(t=>t.stop());toast("تعذّر بدء التسجيل على هذا المتصفح.");return;}
   tsm.chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)tsm.chunks.push(e.data);};
-  rec.start(250);
+  try{rec.start(250);}
+  catch(e){stream.getTracks().forEach(t=>t.stop());toast("تعذّر بدء التسجيل على هذا المتصفح.");return;}
   tsm.rec=rec;tsm.stream=stream;tsm.recStart=Date.now();
   // إيقاف تلقائي عند السكوت (وضع التصحيح الفوري)
   if(tsm.mode==="inst"){
