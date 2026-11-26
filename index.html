@@ -1410,6 +1410,7 @@ route();pUI();
 window.__wird={computeTimes,tzOffset,dayTimes,nextPortion,rate,newSeg,LADDER,khatmaBounds,fromGi,gi,SC,TOTAL,ST:()=>ST,qibla};
 </script>
 <script>
+try{if(localStorage.getItem("wird.auth"))document.getElementById("gate").classList.add("hide");}catch(e){}
 window.__wirdGateT=setTimeout(function(){
   if(window.__wirdFbOk)return;
   var g=document.getElementById("gateBody");if(!g)return;
@@ -1421,18 +1422,19 @@ window.__wirdGateT=setTimeout(function(){
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,onAuthStateChanged,GoogleAuthProvider,signInWithCredential,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getAuth,setPersistence,indexedDBLocalPersistence,browserLocalPersistence,onAuthStateChanged,GoogleAuthProvider,signInWithCredential,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,deleteDoc} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyDC8Jt4OKg7eDw556MAbL-nR8IAr0OQpg4",authDomain:"wird-a1545.firebaseapp.com",projectId:"wird-a1545",appId:"1:238241990747:web:99b7c87381888f7d6e577e"};
 const gate=document.getElementById("gate"),gateBody=document.getElementById("gateBody");
 const AUTH_KEY="wird.auth";
+function returning(){try{return !!store.get(AUTH_KEY);}catch(e){return false;}}
 const GLOGO='<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.61 20.08H42V20H24v8h11.3c-1.65 4.66-6.08 8-11.3 8-6.63 0-12-5.37-12-12s5.37-12 12-12c3.06 0 5.84 1.15 7.94 3.04l5.66-5.66C34.52 6.05 29.62 4 24 4 12.96 4 4 12.96 4 24s8.96 20 20 20 20-8.96 20-20c0-1.28-.13-2.53-.39-3.92z"/><path fill="#FF3D00" d="M6.31 14.69l6.57 4.82C14.66 15.11 18.96 12 24 12c3.06 0 5.84 1.15 7.94 3.04l5.66-5.66C34.52 6.05 29.62 4 24 4 16.32 4 9.66 8.34 6.31 14.69z"/><path fill="#4CAF50" d="M24 44c5.17 0 9.86-1.98 13.41-5.19l-6.19-5.24C29.15 35.09 26.7 36 24 36c-5.2 0-9.6-3.32-11.28-7.95l-6.52 5.02C9.51 39.56 16.23 44 24 44z"/><path fill="#1976D2" d="M43.61 20.08H42V20H24v8h11.3c-.79 2.23-2.23 4.16-4.08 5.57l6.19 5.24C36.97 39.21 44 34 44 24c0-1.28-.13-2.53-.39-3.92z"/></svg>';
 let auth=null,db=null,provider=null,user=null,uref=null,ready=false,syncT=null;
 const $id=x=>document.getElementById(x);
 function hideGate(){gate.classList.add("hide");}
 function showGate(){gate.classList.remove("hide");}
-function gateLoading(t){showGate();gateBody.innerHTML='<div class="gate-spin"></div><p class="muted" style="text-align:center">'+(t||"لحظة من فضلك…")+'</p>';}
+function gateLoading(t){if(returning()&&!window.__wirdManual)return;showGate();gateBody.innerHTML='<div class="gate-spin"></div><p class="muted" style="text-align:center">'+(t||"لحظة من فضلك…")+'</p>';}
 function errAr(c){return({"auth/invalid-email":"البريد الإلكتروني غير صحيح.","auth/email-already-in-use":"هذا البريد مسجّل بالفعل، جرّبي تسجيل الدخول.","auth/weak-password":"كلمة السر ضعيفة؛ استخدمي ٦ أحرف على الأقل.","auth/wrong-password":"البريد الإلكتروني أو كلمة السر غير صحيحة.","auth/invalid-credential":"البريد الإلكتروني أو كلمة السر غير صحيحة.","auth/user-not-found":"لا يوجد حساب بهذا البريد، أنشئي حسابًا جديدًا.","auth/user-disabled":"هذا الحساب موقوف.","auth/too-many-requests":"محاولات كثيرة، انتظري قليلًا ثم حاولي مجددًا.","auth/network-request-failed":"تحقّقي من اتصالك بالإنترنت.","auth/account-exists-with-different-credential":"يوجد حساب بهذا البريد بطريقة دخول أخرى."})[c]||"حدث خطأ غير متوقع، حاولي مرة أخرى.";}
 function showErr(t){const e=$id("gErr");if(!e)return;const ok=$id("gOk");if(ok)ok.style.display="none";if(!t){e.style.display="none";return;}e.textContent=t;e.style.display="block";}
 function showOk(t){const e=$id("gOk");if(!e)return;const er=$id("gErr");if(er)er.style.display="none";e.textContent=t;e.style.display="block";}
@@ -1450,7 +1452,14 @@ window.addEventListener("pagehide",()=>{if(ready){clearTimeout(syncT);push();}})
 window.__wirdWipe=()=>{ready=false;const r=uref;if(r)deleteDoc(r).catch(()=>{});if(auth)signOut(auth).catch(()=>{});};
 window.__wirdMore=()=>{
   const card=$id("acctCard");if(!card)return;
-  if(!user){card.style.display="none";return;}
+  if(!user){
+    if(!returning()){card.style.display="none";return;}
+    card.style.display="";
+    $id("acctInfo").textContent="غير متصلة بحسابك حاليًا. بياناتك محفوظة على هذا الجهاز ولن تضيع، سجّلي الدخول لتتزامن مع حسابك.";
+    const so=$id("acctOut");if(so)so.style.display="none";
+    const sy=$id("acctSync");sy.textContent="تسجيل الدخول";sy.onclick=()=>{window.__wirdManual=true;authUI("in");};
+    return;
+  }
   card.style.display="";
   $id("acctInfo").textContent="مسجّلة الدخول بحساب: "+(user.email||"Google");
   $id("acctOut").onclick=async()=>{if(!confirm("تسجيل الخروج من حسابك؟ ستبقى بياناتك محفوظة في حسابك وعلى هذا الجهاز."))return;ready=false;try{await signOut(auth);}catch(e){}location.reload();};
@@ -1502,6 +1511,8 @@ function authUI(mode,preErr){
   +'<div class="gnote">'+(mode==="up"?'لديكِ حساب بالفعل؟ <a id="gToggle">تسجيل الدخول</a>':'ليس لديكِ حساب؟ <a id="gToggle">إنشاء حساب جديد</a>')
   +(mode==="in"?'&nbsp;&nbsp;·&nbsp;&nbsp;<a id="gForgot">نسيتِ كلمة السر؟</a>':"")+'</div>'
   +'<p class="gnote" style="font-size:12.5px;line-height:1.8">تُحفظ عدّاداتك وخطتك وسلسلة أيامك في حسابك بأمان، فتجدينها كما تركتِها من أي جهاز.</p>';
+  if(returning()){gateBody.insertAdjacentHTML('beforeend','<p class="gnote"><a id="gSkip">المتابعة بدون تسجيل، بياناتك محفوظة على هذا الجهاز</a></p>');$id('gSkip').onclick=()=>{window.__wirdManual=false;hideGate();};}
+  gateBody.insertAdjacentHTML('beforeend','<p class="gnote" style="font-size:12px;line-height:1.8">لبقاء تسجيل دخولك دائمًا: افتحي الرابط من متصفح الهاتف (سفاري أو كروم) وأضيفيه إلى الشاشة الرئيسية، وليس من داخل واتساب.</p>');
   if(preErr)showErr(preErr);
   $id("gToggle").onclick=()=>authUI(mode==="up"?"in":"up");
   (function mountGis(tries){
@@ -1542,17 +1553,17 @@ function authUI(mode,preErr){
 
 try{
   const app=initializeApp(firebaseConfig);
-  auth=getAuth(app);db=getFirestore(app);provider=new GoogleAuthProvider();
+  auth=getAuth(app);try{setPersistence(auth,indexedDBLocalPersistence).catch(function(){return setPersistence(auth,browserLocalPersistence);}).catch(function(){});}catch(e){}try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}db=getFirestore(app);provider=new GoogleAuthProvider();
   window.__wirdFbOk=true;clearTimeout(window.__wirdGateT);
 }catch(e){
   gateBody.innerHTML='<p class="muted" style="text-align:center">تعذّر تشغيل خدمة تسجيل الدخول.</p>';
   throw e;
 }
 
-setTimeout(()=>{try{if(!user&&gateBody.querySelector(".gate-spin"))authUI("in");}catch(e){}},12000);
+setTimeout(()=>{try{if(!user&&!returning()&&gateBody.querySelector(".gate-spin"))authUI("in");}catch(e){}},12000);
 onAuthStateChanged(auth,u=>{
   if(u){gateLoading("جاري تحميل بياناتك…");syncDown(u);}
-  else{user=null;ready=false;authUI("in");}
+  else{user=null;ready=false;if(returning()){hideGate();if(window.__wirdMore&&location.hash.indexOf("#/more")===0)route();}else authUI("in");}
 });
 </script>
 </body>
