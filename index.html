@@ -169,6 +169,8 @@ select:focus,input:focus{outline:none;border-color:var(--g5);box-shadow:0 0 0 3p
 .tsm-mist b{font-size:20px}
 
 /* ===== اسأل فتوى ===== */
+.fw-rel-h{margin:12px 0 2px;font-size:13px;font-weight:700;color:var(--bad)}
+
 .fw-fatwa{border:1.5px solid var(--line);border-radius:14px;padding:11px 13px;margin-top:9px;background:#fff}
 .fw-ft{font-weight:800;color:var(--g8);font-size:15px;margin-bottom:4px}
 .fw-fq{color:var(--mute);font-size:13.5px;line-height:1.7;margin-bottom:6px}
@@ -1648,7 +1650,7 @@ const FW_SRC=[
  {ic:"⚖️",n:"أقوال المذاهب الأربعة — الدرر السنية",u:q=>"https://dorar.net/feqhia/search?q="+encodeURIComponent(q)}
 ];
 const FW_CHIPS=["حكم صلاة الوتر","صلاة الاستخارة","قضاء صيام رمضان","زكاة المال","سجود السهو","صيام الست من شوال","حكم الحجاب","صلاة الجمعة للمرأة"];
-const FW_STOP=new Set(["من","في","علي","الي","عن","ما","هل","هو","هي","ان","انا","اللي","هذا","هذه","ذلك","ثم","او","لا","كيف","ماذا","متي","اين","لماذا","و","ب","ل","كان","يكون","كل","بعد","قبل","عند","مع","له","لها","بين","غير","مش","ده","دي"]);
+const FW_STOP=new Set(["من","في","علي","الي","عن","ما","هل","هو","هي","ان","انا","اللي","هذا","هذه","ذلك","ثم","او","لا","كيف","ماذا","متي","اين","لماذا","و","ب","ل","كان","يكون","كل","بعد","قبل","عند","مع","له","لها","بين","غير","مش","ده","دي","حكم","ايه","فتوي","نص","نصا","يجوز","بسبب","سبب","جواز"]);
 const fab=document.getElementById("fwFab"),wrap=document.getElementById("fwWrap"),
  msgs=document.getElementById("fwMsgs"),chips=document.getElementById("fwChips"),
  form=document.getElementById("fwForm"),inp=document.getElementById("fwIn");
@@ -1656,8 +1658,9 @@ let started=false, fwi=null, fwC={};
 function el(t,c,txt){const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;}
 function scrollEnd(){msgs.scrollTop=msgs.scrollHeight;}
 function botText(txt){const m=el("div","fw-m bot",txt);msgs.appendChild(m);scrollEnd();return m;}
-const norm=s=>s.replace(/[\u064B-\u0652\u0670\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[^\u0600-\u06FF ]/g," ").replace(/\s+/g," ").trim();
+const norm=s=>s.replace(/[ً-ْٰـ]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[^؀-ۿ ]/g," ").replace(/\s+/g," ").trim();
 function tkns(s){return norm(s).split(" ").map(w=>w.replace(/^(وال|فال|بال|كال|لل|ال|و)/,"")).filter(w=>w.length>1&&!FW_STOP.has(w));}
+const tmatch=(a,b)=>a===b||(a.length>=4&&b.length>=4&&(a.startsWith(b)||b.startsWith(a)));
 async function ensureIdx(){
  if(fwi) return;
  const r=await fetch("fw/index.json"); fwi=await r.json();
@@ -1681,44 +1684,62 @@ function fatwaCard(f){
  card.appendChild(foot);
  return card;
 }
+function moreSources(m,q){
+ const more=el("div","fw-note");
+ more.appendChild(document.createTextNode("نصوص الفتاوى من موقع الشيخ ابن باز بإذنه (النقل متاح بشرط ذكر المصدر). للبحث في مصادر موثوقة أخرى لنفس السؤال: "));
+ FW_SRC.forEach((s,i)=>{
+  const a=el("a","fw-ext",s.n);a.href=s.u(q);a.target="_blank";a.rel="noopener";
+  if(i)more.appendChild(document.createTextNode(" · "));
+  more.appendChild(a);
+ });
+ m.appendChild(more);
+}
+function findFatwas(q){
+ const qt=tkns(q),ans=[],rel=[];
+ if(!qt.length)return{ans,rel};
+ const cand=[];
+ for(const e of fwi){
+  let th=0,qh=0;const matched=new Set();
+  for(const w of qt){
+   if(e._nt.some(t=>tmatch(t,w))){th++;matched.add(w);}
+   else if(e._nq.some(t=>tmatch(t,w))){qh++;matched.add(w);}
+  }
+  const qm=matched.size;
+  if(qm>0)cand.push({e,th,qh,qm,cov:qm/qt.length});
+ }
+ const titleCov=e=>{if(!e._nt.length)return 0;let m=0;for(const t of e._nt)if(qt.some(w=>tmatch(t,w)))m++;return m/e._nt.length;};
+ for(const c of cand){
+  if(c.cov>=0.999&&c.th>=1&&(qt.length>2||titleCov(c.e)>=0.5))ans.push(c);
+  else if(c.th>=1&&c.qm>=2&&c.cov>=0.4)rel.push(c);
+ }
+ const rank=(a,b)=>(b.cov-a.cov)||(b.th-a.th)||(b.qh-a.qh);
+ ans.sort(rank);rel.sort(rank);
+ return{ans,rel};
+}
 async function answer(q){
  msgs.appendChild(el("div","fw-m me",q));scrollEnd();
  const wait=el("div","fw-m bot","ببحث في فتاوى الشيخ ابن باز رحمه الله…");msgs.appendChild(wait);scrollEnd();
- let hits=[];
- try{
-  await ensureIdx();
-  const qt=tkns(q), nq=norm(q);
-  if(qt.length){
-   const scored=[];
-   for(const e of fwi){
-    let s=0;
-    for(const w of qt){ if(e._nt.includes(w)) s+=3; else if(e._nq.includes(w)) s+=1; }
-    if(s>0 && norm(e.t).includes(nq)) s+=4;
-    if(s>=3) scored.push([s,e]);
-   }
-   scored.sort((a,b)=>b[0]-a[0]);
-   hits=scored.slice(0,4).map(x=>x[1]);
-  }
- }catch(err){}
+ let ans=[],rel=[];
+ try{ await ensureIdx(); const r=findFatwas(q); ans=r.ans; rel=r.rel; }catch(err){}
  wait.remove();
- if(hits.length){
-  const texts=await Promise.all(hits.map(h=>loadChunk(h._p).then(c=>c[String(h.i)]).catch(()=>null)));
-  const got=texts.filter(Boolean);
-  const m=el("div","fw-m bot");
-  m.appendChild(el("div","","دي فتاوى الشيخ ابن باز رحمه الله اللي بتجاوب على سؤالك — الحكم نصًا، ومع كل فتوى لينك صفحتها الرسمية:"));
-  got.forEach(f=>m.appendChild(fatwaCard(f)));
-  const more=el("div","fw-note");
-  more.appendChild(document.createTextNode("نقلنا النص كما هو بإذن موقع الشيخ (النقل متاح بشرط ذكر المصدر). لو حابة توسّعي البحث في مصادر تانية لنفس السؤال: "));
-  FW_SRC.forEach((s,i)=>{
-   const a=el("a","fw-ext",s.n);a.href=s.u(q);a.target="_blank";a.rel="noopener";
-   if(i)more.appendChild(document.createTextNode(" · "));
-   more.appendChild(a);
-  });
-  m.appendChild(more);
-  msgs.appendChild(m);scrollEnd();
+ const pick=ans.slice(0,3).concat(ans.length?rel.slice(0,2):rel.slice(0,4));
+ const texts=await Promise.all(pick.map(c=>loadChunk(c.e._p).then(ch=>ch[String(c.e.i)]).catch(()=>null)));
+ const cards=pick.map((c,i)=>({c,f:texts[i]})).filter(x=>x.f);
+ const m=el("div","fw-m bot");
+ const ansCards=cards.filter(x=>ans.includes(x.c));
+ const relCards=cards.filter(x=>!ans.includes(x.c));
+ if(ansCards.length){
+  m.appendChild(el("div","","دي فتاوى الشيخ ابن باز رحمه الله المطابقة لسؤالك، الحكم نصًا ومع كل فتوى لينك صفحتها الرسمية:"));
+  ansCards.forEach(x=>m.appendChild(fatwaCard(x.f)));
+  if(relCards.length){
+   m.appendChild(el("div","fw-rel-h","نتائج قريبة أخرى، ليست إجابة مؤكدة لسؤالك بالضبط:"));
+   relCards.forEach(x=>m.appendChild(fatwaCard(x.f)));
+  }
+ }else if(relCards.length){
+  m.appendChild(el("div","","ملقيتش فتوى بتطابق سؤالك تمامًا في فتاوى الشيخ ابن باز رحمه الله. دي نتائج قريبة من مكتبة فتاواه، ومش متأكدين إن فيها إجابة سؤالك بالضبط، فراجعيها قبل الاعتماد عليها:"));
+  relCards.forEach(x=>m.appendChild(fatwaCard(x.f)));
  }else{
-  const m=el("div","fw-m bot");
-  m.appendChild(el("div","","ملقيتش فتوى مطابقة عند الشيخ ابن باز لسؤالك. دي أقرب المصادر الموثوقة، كل بطاقة تفتح نتائج سؤالك بالضبط على الموقع الرسمي للمصدر:"));
+  m.appendChild(el("div","","ملقيتش فتوى مطابقة لسؤالك في فتاوى الشيخ ابن باز، ومش هعتمد على نتائج مش متأكد منها. دي المصادر الموثوقة اللي تقدري تبحثي فيها بنفس سؤالك، وكل بطاقة تفتح نتائجه على الموقع الرسمي للمصدر:"));
   const all=[{ic:"📜",n:"الشيخ ابن باز رحمه الله",u:q=>"https://binbaz.org.sa/search?text="+encodeURIComponent(q)}].concat(FW_SRC);
   all.forEach(s=>{
    const a=el("a","fw-src");a.href=s.u(q);a.target="_blank";a.rel="noopener";
@@ -1727,13 +1748,14 @@ async function answer(q){
    a.appendChild(g);a.appendChild(el("span","fw-go","↗"));
    m.appendChild(a);
   });
-  msgs.appendChild(m);scrollEnd();
  }
+ moreSources(m,q);
+ msgs.appendChild(m);scrollEnd();
 }
 function open(){
  wrap.hidden=false;
  if(!started){started=true;
-  botText("أهلًا بكِ 🌸 اكتبي أي سؤال شرعي، وهجاوبك بالحكم نصًا من فتاوى الشيخ عبد العزيز بن باز رحمه الله، ومع كل فتوى لينك صفحتها على موقعه الرسمي. ولو حابة مصدر تاني (ابن عثيمين، إسلام ويب، الإسلام سؤال وجواب، أو أقوال المذاهب الأربعة) هتلاقي لينكاته مع الإجابة.");
+  botText("أهلًا بكِ 🌸 اكتبي أي سؤال شرعي، وهدورلك في فتاوى الشيخ عبد العزيز بن باز رحمه الله. لو في فتوى مطابقة هكتبلك الحكم نصًا مع لينك صفحته الرسمية، ولو في نتائج قريبة بس هقولك إنها مش إجابة مؤكدة. ومع كل إجابة لينكات مصادر موثوقة أخرى: ابن عثيمين، إسلام ويب، الإسلام سؤال وجواب، وأقوال المذاهب الأربعة.");
  }
  setTimeout(()=>inp.focus(),60);
 }
