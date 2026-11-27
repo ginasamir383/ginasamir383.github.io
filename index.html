@@ -1675,6 +1675,7 @@ const FW_SRC=[
  {ic:"📚",n:"الإسلام سؤال وجواب",u:q=>"https://islamqa.info/ar/search?q="+encodeURIComponent(q)},
  {ic:"⚖️",n:"أقوال المذاهب الأربعة — الدرر السنية",u:q=>"https://dorar.net/feqhia/search?q="+encodeURIComponent(q)}
 ];
+const FW_DORAR="https://wird-dorar-proxy.ginasamir383.workers.dev";
 const FW_CHIPS=["حكم صلاة الوتر","صلاة الاستخارة","قضاء صيام رمضان","زكاة المال","سجود السهو","صيام الست من شوال","حكم الحجاب","صلاة الجمعة للمرأة"];
 const FW_STOP=new Set(["من","في","علي","الي","عن","ما","هل","هو","هي","ان","انا","اللي","هذا","هذه","ذلك","ثم","او","لا","كيف","ماذا","متي","اين","لماذا","و","ب","ل","كان","يكون","كل","بعد","قبل","عند","مع","له","لها","بين","غير","مش","ده","دي","حكم","ايه","فتوي","نص","نصا","يجوز","بسبب","سبب","جواز","عليه","عليها","لدي","عندها","عنده","عندي","شي","حاجه","بتاع","بتاعه","منه","منها","مني","منك","كده","كدا","برضه","تاني","لسه","حمد","سلام","رسول","سماح","فاضل","فضيل","حفظ","رعا","جزاك","جزا","بارك","وفق","ارجو","توضيح","افيد","يفيد","افاده","يقول","تقول","يسال","تسال","سائل","سائله","جواب","اجاب","اجابه","افت","افتون","افتونا","شيخ","والد","اما","سيدي","اللهم","الله","رسوله"]);
 const FW_PHRASES=["الصلاه والسلام علي رسول الله","صلي الله عليه وسلم","صلي الله عليه وعلي اله وسلم","عليه الصلاه والسلام","عليه افضل الصلاه والسلام","صلوات الله وسلامه عليه","الحمد لله رب العالمين","الحمد لله","السلام عليكم ورحمه الله وبركاته","السلام عليكم ورحمه الله","وعليكم السلام ورحمه الله وبركاته","وعليكم السلام","وعليك السلام","اما بعد","سماحه الشيخ","سماحه الوالد","حفظكم الله","حفظك الله","جزاكم الله خيرا","جزاكم الله خير","وفقكم الله","بارك الله فيكم","بارك الله فيك","ورحمه الله وبركاته"];
@@ -1779,9 +1780,31 @@ function findFatwas(q){
  ans.sort(rank);rel.sort(rank);
  return{ans,rel};
 }
+async function fetchDorar(q){
+ try{
+  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),7000);
+  const r=await fetch(FW_DORAR+"/dorar/feqhia?q="+encodeURIComponent(q)+"&limit=3",{signal:ctl.signal});
+  clearTimeout(to);
+  if(!r.ok)return[];
+  const j=await r.json();
+  return (j&&j.data||[]).filter(d=>d&&d.title&&d.text&&d.url).slice(0,3);
+ }catch(e){return[];}
+}
+function dorarCard(d){
+ const card=el("div","fw-fatwa");
+ card.appendChild(el("div","fw-ft",d.title));
+ card.appendChild(el("div","fw-fa",d.text));
+ const foot=el("div","fw-ff");
+ foot.appendChild(el("span","fw-fm","الموسوعة الفقهية · الدرر السنية"));
+ const a=el("a","fw-fl","المسألة على dorar.net ↗");a.href=d.url;a.target="_blank";a.rel="noopener";
+ foot.appendChild(a);
+ card.appendChild(foot);
+ return card;
+}
 async function answer(q){
  msgs.appendChild(el("div","fw-m me",q));scrollEnd();
  const wait=el("div","fw-m bot","ببحث في فتاوى الشيخ ابن باز رحمه الله…");msgs.appendChild(wait);scrollEnd();
+ const dorarP=fetchDorar(q);
  let ans=[],rel=[];
  try{ await ensureIdx(); const r=findFatwas(q); ans=r.ans; rel=r.rel; }catch(err){}
  wait.remove();
@@ -1811,6 +1834,11 @@ async function answer(q){
    a.appendChild(g);a.appendChild(el("span","fw-go","↗"));
    m.appendChild(a);
   });
+ }
+ const dorar=await dorarP;
+ if(dorar.length){
+  m.appendChild(el("div","fw-rel-h","ومن الموسوعة الفقهية — الدرر السنية، المسألة كاملة بنصها ولينكها الرسمي:"));
+  dorar.forEach(d=>m.appendChild(dorarCard(d)));
  }
  moreSources(m,q);
  msgs.appendChild(m);scrollEnd();

@@ -1,0 +1,5 @@
+name = "wird-dorar-proxy"
+main = "index.js"
+compatibility_date = "2026-11-27"
+# Set the Dorar token after their approval email arrives:
+#   wrangler secret put DORAR_TOKEN
