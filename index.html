@@ -1986,7 +1986,7 @@ function findFatwas(q){
    else if(c.th>=1&&c.qm>=2&&c.cov>=0.4)rel.push(c);
   }
  }
- const rank=(a,b)=>(b.cov-a.cov)||(b.sc-a.sc);
+ const rank=(a,b)=>(b.sc*Math.sqrt(b.cov))-(a.sc*Math.sqrt(a.cov));
  ans.sort(rank);rel.sort(rank);
  return{ans,rel};
 }
