@@ -1256,8 +1256,27 @@ function pgMore(){
   $("#tr0").onclick=()=>{ST.tasbih.count=0;save();$("#tc").textContent=n(0);};
   $("#wipe").onclick=()=>{if(confirm("سيتم مسح كل البيانات المحفوظة على هذا الجهاز وفي حسابك إن وُجد. متأكدة؟")){window.__wirdWipe&&window.__wirdWipe();try{localStorage.removeItem("wird.v1");localStorage.removeItem("wird.auth");}catch(e){}delete mem["wird.v1"];location.reload();}};
   $("#qc").onclick=async()=>{
-    const go=()=>{const h=e=>{const hd=e.webkitCompassHeading!=null?e.webkitCompassHeading:(e.alpha!=null?360-e.alpha:null);if(hd==null)return;$("#qn")&&($("#qn").style.transform="rotate("+(qb-hd)+"deg)");$("#qm").textContent="وجّهي أعلى الهاتف نحو السهم الذهبي ليكون للأعلى.";};window.addEventListener("deviceorientationabsolute",h,true);window.addEventListener("deviceorientation",h,true);};
-    try{if(typeof DeviceOrientationEvent!=="undefined"&&DeviceOrientationEvent.requestPermission){const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){$("#qm").textContent="لم يُسمح باستخدام البوصلة.";return;}}go();$("#qm").textContent="تم تشغيل البوصلة.";}catch(e){$("#qm").textContent="البوصلة غير متاحة على هذا الجهاز. استخدمي الزاوية المذكورة.";}
+    const start=()=>{
+      let abs=false,cur=qb;
+      const scr=()=>{try{if(screen.orientation&&typeof screen.orientation.angle==="number")return screen.orientation.angle;if(typeof window.orientation==="number")return window.orientation;}catch(e){}return 0;};
+      const head=e=>{
+        if(e.webkitCompassHeading!=null)return e.webkitCompassHeading;
+        if(e.alpha==null)return null;
+        return ((360-e.alpha+scr())%360+360)%360;
+      };
+      const show=hd=>{
+        if(hd==null)return;
+        const t=qb-hd,d=((t-cur)%360+540)%360-180;
+        cur+=d*0.35;
+        const nd=$("#qn");if(nd)nd.style.transform="rotate("+cur+"deg)";
+        const qm=$("#qm");if(qm)qm.textContent="وجّهي أعلى الهاتف نحو السهم الذهبي: ده اتجاه القبلة.";
+      };
+      const hAbs=e=>{abs=true;show(head(e));};
+      const hRel=e=>{if(!abs)show(head(e));};
+      window.addEventListener("deviceorientationabsolute",hAbs,true);
+      window.addEventListener("deviceorientation",hRel,true);
+    };
+    try{if(typeof DeviceOrientationEvent!=="undefined"&&DeviceOrientationEvent.requestPermission){const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){$("#qm").textContent="لم يُسمح باستخدام البوصلة.";return;}}start();$("#qm").textContent="تم تشغيل البوصلة. لو الاتجاه مش مظبوط، حرّكي هاتفك في الهواء على شكل رقم ٨ لمعايرة حساس البوصلة.";}catch(e){$("#qm").textContent="البوصلة غير متاحة على هذا الجهاز. استخدمي الزاوية المذكورة.";}
   };
 }
 /* ===== الأذكار ===== */
