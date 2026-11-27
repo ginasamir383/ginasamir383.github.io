@@ -25,10 +25,12 @@ const ALLOWED = ["https://ginasamir383.github.io", "http://localhost", "http://1
 
 function corsHeaders(origin) {
   const ok = ALLOWED.some(a => origin === a || (origin && origin.startsWith(a + ":")));
+  if (!ok) return null;
   return {
     "Access-Control-Allow-Origin": ok ? origin : ALLOWED[0],
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Wird-Auth",
+    "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
   };
 }
@@ -65,8 +67,10 @@ async function handleTranscribe(request, env, cors, ip) {
   if (!throttle("t:" + ip, 30, 600000)) return json({ error: "rate_limited" }, 429, cors);
   const len = +(request.headers.get("Content-Length") || 0);
   if (len > 30 * 1024 * 1024) return json({ error: "too_large" }, 413, cors);
+  const ct = request.headers.get("Content-Type") || "";
+  if (!ct.includes("multipart/form-data")) return json({ error: "expected multipart form" }, 400, cors);
   let inFd;
-  try { inFd = await request.formData(); } catch (e) { return json({ error: "invalid_form" }, 400, cors); }
+  try { inFd = await request.formData(); } catch (e) { return json({ error: "expected multipart form" }, 400, cors); }
   const out = new FormData();
   for (const k of ["file", "model", "language", "prompt"]) {
     const v = inFd.get(k);
@@ -110,32 +114,36 @@ async function handleAnswer(request, env, cors, ip) {
     question: String((e && e.q) || "").slice(0, 600),
     answer: String((e && e.a) || "").slice(0, 4000),
   }));
-  const payload = {
-    model: "llama-3.3-70b-versatile",
-    temperature: 0.2,
-    max_tokens: 600,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: ANSWER_SYS },
-      { role: "user", content: JSON.stringify({ question, entries: clean }) },
-    ],
-  };
-  let r;
-  try {
-    r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + env.GROQ_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch (e) {
-    return json({ error: "upstream_unreachable" }, 502, cors);
+  // Model availability differs per Groq account; try in order.
+  const MODELS = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "allam-2-7b"];
+  let r = null, text = "", lastErr = "";
+  for (const model of MODELS) {
+    const payload = {
+      model,
+      temperature: 0.2,
+      max_tokens: 1200,
+      reasoning_effort: "low",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: ANSWER_SYS },
+        { role: "user", content: JSON.stringify({ question, entries: clean }) },
+      ],
+    };
+    try {
+      r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + env.GROQ_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      text = await r.text();
+    } catch (e) {
+      return json({ error: "upstream_unreachable" }, 502, cors);
+    }
+    if (r.ok) break;
+    try { const j = JSON.parse(text); lastErr = (j && j.error && j.error.message) || ("upstream_" + r.status); } catch (e) { lastErr = "upstream_" + r.status; }
+    if (!/model/.test(lastErr)) return json({ error: lastErr }, r.status === 429 ? 429 : 502, cors);
   }
-  const text = await r.text();
-  if (!r.ok) {
-    let msg = "upstream_" + r.status;
-    try { const j = JSON.parse(text); if (j && j.error && j.error.message) msg = j.error.message; } catch (e) {}
-    return json({ error: msg }, r.status === 429 ? 429 : 502, cors);
-  }
+  if (!r || !r.ok) return json({ error: lastErr || "no_model_available" }, 502, cors);
   let out = null;
   try {
     const j = JSON.parse(text);
@@ -155,7 +163,8 @@ export default {
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin);
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
-    if (url.pathname === "/health") return json({ ok: true }, 200, cors);
+    if (url.pathname === "/health") return json({ ok: true, service: "wird-tasmee3-proxy" }, 200, cors || {});
+    if (!cors) return json({ error: "forbidden origin" }, 403, { "Content-Type": "application/json; charset=utf-8" });
     const ip = request.headers.get("CF-Connecting-IP") || "anon";
     if (url.pathname === "/transcribe" && request.method === "POST") return handleTranscribe(request, env, cors, ip);
     if (url.pathname === "/answer" && request.method === "POST") return handleAnswer(request, env, cors, ip);

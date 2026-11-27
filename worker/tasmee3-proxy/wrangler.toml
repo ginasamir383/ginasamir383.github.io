@@ -1,4 +1,5 @@
 name = "wird-tasmee3-proxy"
+account_id = "33bff64d31ff81dc9cc952f118873550"
 main = "index.js"
 compatibility_date = "2025-01-01"
 # Secrets (set via dashboard): GROQ_API_KEY, PROXY_AUTH
