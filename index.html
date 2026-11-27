@@ -1869,18 +1869,29 @@ function fkey(w){
 }
 function tkns(s){return fclean(s).split(" ").filter(w=>w.length>1&&!FW_STOP.has(w)&&!FW_STOP.has(fstem(w))).map(w=>w.replace(/^(وال|فال|بال|كال|لل|ال|و)/,"")).filter(w=>w.length>1);}
 const tmatch=(a,b)=>a===b||(a.length>=4&&b.length>=4&&(a.startsWith(b)||b.startsWith(a)));
+async function fjson(u){
+ let err;
+ for(let i=0;i<4;i++){
+  try{
+   const r=await fetch(i<2?u:u+"?r="+Date.now()+i);
+   if(!r.ok)throw new Error("http "+r.status);
+   return await r.json();
+  }catch(e){err=e;await new Promise(z=>setTimeout(z,600*(i+1)));}
+ }
+ throw err;
+}
 async function ensureIdx(){
  if(fwi&&fwdf)return;
- const r=await fetch("fw/index.json");fwi=await r.json();
+ fwi=await fjson("fw/index.json");
  fwi.forEach((e,p)=>{e._p=p;e._nt=tkns(e.t).map(fkey);e._nq=tkns(e.q||"").map(fkey);e._na=[];});
- const r2=await fetch("fw/aidx.json");const aidx=await r2.json();
+ const aidx=await fjson("fw/aidx.json");
  fwi.forEach(e=>{e._na=(aidx[String(e.i)]||"").split(" ").filter(Boolean);});
  fwdf={};
  for(const e of fwi){const seen=new Set(e._nt.concat(e._nq,e._na));for(const k of seen)fwdf[k]=(fwdf[k]||0)+1;}
 }
 async function loadChunk(p){
  const c=Math.floor(p/150);
- if(!fwC[c]){const r=await fetch("fw/c-"+String(c).padStart(2,"0")+".json");fwC[c]=await r.json();}
+ if(!fwC[c]){fwC[c]=await fjson("fw/c-"+String(c).padStart(2,"0")+".json");}
  return fwC[c];
 }
 function fatwaCard(f){
