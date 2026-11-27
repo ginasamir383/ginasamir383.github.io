@@ -122,33 +122,50 @@ async function handleAnswer(request, env, cors, ip) {
     answer: String((e && e.a) || "").slice(0, 4000),
   }));
   // Model availability differs per Groq account; try in order.
-  const MODELS = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "allam-2-7b"];
+  const MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b", "allam-2-7b"];
   let r = null, text = "", lastErr = "";
-  for (const model of MODELS) {
-    const payload = {
-      model,
-      temperature: 0.2,
-      max_tokens: 2000,
-      reasoning_effort: "low",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: ANSWER_SYS },
-        { role: "user", content: JSON.stringify({ question, entries: clean, prev, sensitive }) },
-      ],
-    };
-    try {
-      r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + env.GROQ_API_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      text = await r.text();
-    } catch (e) {
-      return json({ error: "upstream_unreachable" }, 502, cors);
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+  outer:
+  for (let round = 0; round < 2; round++) {
+    for (const model of MODELS) {
+      const payload = {
+        model,
+        temperature: 0.2,
+        max_tokens: 2000,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: ANSWER_SYS },
+          { role: "user", content: JSON.stringify({ question, entries: clean, prev, sensitive }) },
+        ],
+      };
+      if (model.indexOf("openai/gpt-oss") === 0) payload.reasoning_effort = "low";
+      try {
+        r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + env.GROQ_API_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        text = await r.text();
+      } catch (e) {
+        lastErr = "upstream_unreachable";
+        r = null;
+        continue;
+      }
+      if (r.ok) {
+        // A reply that is not usable JSON is treated like a failure so the next model gets a turn.
+        try {
+          const jj = JSON.parse(text);
+          const cc = jj && jj.choices && jj.choices[0] && jj.choices[0].message && jj.choices[0].message.content;
+          const pp = typeof cc === "string" ? JSON.parse(cc) : cc;
+          if (pp && (pp.hukm || pp.answer)) break outer;
+          lastErr = "empty_answer";
+        } catch (e) { lastErr = "bad_json"; }
+        r = null;
+        continue;
+      }
+      try { const j = JSON.parse(text); lastErr = (j && j.error && j.error.message) || ("upstream_" + r.status); } catch (e) { lastErr = "upstream_" + r.status; }
     }
-    if (r.ok) break;
-    try { const j = JSON.parse(text); lastErr = (j && j.error && j.error.message) || ("upstream_" + r.status); } catch (e) { lastErr = "upstream_" + r.status; }
-    if (!/model/.test(lastErr)) return json({ error: lastErr }, r.status === 429 ? 429 : 502, cors);
+    if (round === 0) await sleep(1200);
   }
   if (!r || !r.ok) return json({ error: lastErr || "no_model_available" }, 502, cors);
   let out = null;

@@ -2002,7 +2002,7 @@ async function fetchDorar(q){
 }
 async function llmAnswer(q,entries,prev,sens){
  try{
-  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),16000);
+  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),26000);
   const r=await fetch(FW_ANSWER,{method:"POST",signal:ctl.signal,
    headers:{"Content-Type":"application/json","X-Wird-Auth":TSM_TOK},
    body:JSON.stringify({question:q,entries:entries.map(f=>({t:f.t,q:f.q||"",a:f.a})),prev:prev||null,sensitive:!!sens})});
@@ -2082,7 +2082,8 @@ async function answer(q){
  const relCards=cards.filter(x=>!ans.includes(x.c));
  if(ansCards.length){
   const lw=el("div","fw-m bot","بلخّص الجواب من الفتوى المسترجعة…");msgs.appendChild(lw);scrollEnd();
-  const la=await llmAnswer(q,ansCards.map(x=>x.f),lastQA,sens);
+  let la=await llmAnswer(q,ansCards.map(x=>x.f),lastQA,sens);
+  if(!la)la=await llmAnswer(q,ansCards.map(x=>x.f),lastQA,sens);
   lw.remove();
   if(la){
    m.appendChild(ansCard(la,sens));
