@@ -53,12 +53,15 @@ function throttle(key, limit, windowMs) {
 }
 
 const ANSWER_SYS =
-  "أنت مساعد فتاوى داخل موقع وِرد. ستصلك فتاوى موثّقة مرقّمة (i من 0 إلى N) من موقع الشيخ عبد العزيز بن باز رحمه الله. " +
-  "مهمتك: أجب عن سؤال المستخدم مستندًا فقط إلى نصوص هذه الفتاوى، دون إضافة أي معلومة أو حكم من خارجها ولو كنت تعرفه. " +
-  "اكتب الجواب بالعربية في 2 إلى 5 جمل، بأسلوب واضح مباشر، يبدأ بالحكم مباشرة دون مقدمات ودون تنويهات ودون ذكر لكلمة فتوى أو مصدر. " +
-  "اختر رقم الفتوى الواحدة الأنسب التي استندت إليها. " +
-  "أخرج JSON فقط بهذا الشكل: {\"answer\":\"نص الجواب\",\"cite\":0}. " +
-  "إذا كانت الفتاوى المعطاة لا تُجيب فعلًا عن السؤال، أخرج: {\"answer\":\"\",\"cite\":-1}.";
+  "أنت مساعد فتاوى داخل موقع وِرد، تعمل بمنهج أهل السنة والجماعة. ستصلك فتاوى موثّقة مرقّمة (i من 0 إلى N) من موقع الشيخ عبد العزيز بن باز رحمه الله، وسؤال مستخدم. " +
+  "مهمتك: أجب عن السؤال مستندًا فقط إلى نصوص هذه الفتاوى، دون إضافة أي معلومة أو حكم أو دليل من خارجها ولو كنت تعرفه. " +
+  "ممنوع منعًا باتًا: اختلاق حكم أو حديث أو فتوى أو رابط؛ نسبة قول لعالم غير مذكور في النصوص؛ ادعاء إجماع غير مذكور فيها؛ تقديم حديث ضعيف على أنه صحيح؛ الحكم على الأشخاص بالتكفير أو التبديع. " +
+  "إن كانت المسألة خلافية في النصوص فبيّن الأقوال الواردة فيها دون إخفاء الخلاف. " +
+  "إذا كان sensitive=true فهذه مسألة حساسة (طلاق/مواريث/تكفير/حقوق مالية/نوازل): اعرض المعلومات العامة الواردة في النصوص فقط، ولا تصدر حكمًا نهائيًا على حالة المستخدم، وبيّن في hukm أن الحكم يتوقف على التفاصيل وأنها تحتاج عرضًا على عالم مؤهل. " +
+  "إذا وُجد prev فهو سياق سؤال سابق؛ استخدمه لفهم الإحالة في السؤال الحالي فقط، ولا تستند في الجواب إلا إلى الفتاوى المعطاة. " +
+  "اكتب بالعربية الواضحة المباشرة دون مقدمات ودون ذكر لآلية عملك. " +
+  "أخرج JSON فقط بهذا الشكل: {\"hukm\":\"الحكم المختصر في جملة أو جملتين يبدأ بالحكم مباشرة\",\"tafsil\":\"شرح الحكم والحالات والاستثناءات كما وردت في النصوص، أو سلسلة فارغة\",\"adilla\":\"الآيات والأحاديث الواردة نصًا في الفتاوى المعطاة فقط، مع بيان درجة الحديث إن وردت في النص، أو فارغة\",\"aqwal\":\"أقوال العلماء المذكورين في النصوص إن تعددت، أو فارغة\",\"cite\":[أرقام الفتاوى التي استندت إليها فعلًا]}. " +
+  "إذا كانت الفتاوى المعطاة لا تُجيب فعلًا عن السؤال، أخرج: {\"hukm\":\"\",\"cite\":[-1]}.";
 
 async function handleTranscribe(request, env, cors, ip) {
   if ((request.headers.get("X-Wird-Auth") || "") !== (env.PROXY_AUTH || "")) {
@@ -107,6 +110,10 @@ async function handleAnswer(request, env, cors, ip) {
   const question = String((body && body.question) || "").slice(0, 500).trim();
   const entries = Array.isArray(body && body.entries) ? body.entries.slice(0, 5) : [];
   if (!question || !entries.length) return json({ error: "invalid_request" }, 422, cors);
+  const sensitive = !!(body && body.sensitive);
+  const prev = body && body.prev && typeof body.prev.q === "string"
+    ? { q: String(body.prev.q).slice(0, 300), a: String(body.prev.hukm || "").slice(0, 400) }
+    : null;
   // URLs are deliberately NOT sent to the model: it can never emit one.
   const clean = entries.map((e, i) => ({
     i,
@@ -121,12 +128,12 @@ async function handleAnswer(request, env, cors, ip) {
     const payload = {
       model,
       temperature: 0.2,
-      max_tokens: 1200,
+      max_tokens: 2000,
       reasoning_effort: "low",
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: ANSWER_SYS },
-        { role: "user", content: JSON.stringify({ question, entries: clean }) },
+        { role: "user", content: JSON.stringify({ question, entries: clean, prev, sensitive }) },
       ],
     };
     try {
@@ -149,9 +156,18 @@ async function handleAnswer(request, env, cors, ip) {
     const j = JSON.parse(text);
     const content = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
     const parsed = typeof content === "string" ? JSON.parse(content) : content;
-    const cite = parsed && typeof parsed.cite === "number" ? Math.trunc(parsed.cite) : -1;
-    const answer = parsed && typeof parsed.answer === "string" ? parsed.answer.trim() : "";
-    if (answer && cite >= 0 && cite < clean.length) out = { answer: answer.slice(0, 1500), cite };
+    let cites = parsed ? parsed.cite : null;
+    if (typeof cites === "number") cites = [Math.trunc(cites)];
+    if (!Array.isArray(cites)) cites = [];
+    cites = cites.filter((c) => Number.isInteger(c) && c >= 0 && c < clean.length).slice(0, 4);
+    const cut = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+    const answer = {
+      hukm: cut(parsed && parsed.hukm, 600) || cut(parsed && parsed.answer, 600),
+      tafsil: cut(parsed && parsed.tafsil, 1200),
+      adilla: cut(parsed && parsed.adilla, 1200),
+      aqwal: cut(parsed && parsed.aqwal, 1200),
+    };
+    if (answer.hukm && cites.length) out = { answer, cite: cites };
   } catch (e) {}
   if (!out) return json({ error: "no_grounded_answer" }, 422, cors);
   return json(out, 200, cors);
