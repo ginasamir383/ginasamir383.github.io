@@ -201,6 +201,7 @@ select:focus,input:focus{outline:none;border-color:var(--g5);box-shadow:0 0 0 3p
 
 #fwFab{position:fixed;bottom:calc(86px + env(safe-area-inset-bottom));inset-inline-end:14px;z-index:45;width:58px;height:58px;border-radius:50%;border:0;background:linear-gradient(160deg,var(--gold2),var(--gold));color:#fff;box-shadow:0 8px 22px rgba(177,138,46,.4);display:flex;align-items:center;justify-content:center;transition:transform .15s}
 #fwFab:active{transform:scale(.92)}
+#fwFabLbl{position:fixed;bottom:calc(150px + env(safe-area-inset-bottom));inset-inline-end:10px;z-index:45;background:#fff;color:var(--g8);border:1.5px solid var(--gold2);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(16,43,39,.14);white-space:nowrap;cursor:pointer}
 #fwFab svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #fwWrap{position:fixed;inset:0;z-index:60;background:rgba(8,39,35,.35)}
 #fwPanel{position:absolute;bottom:calc(86px + env(safe-area-inset-bottom));inset-inline-end:12px;width:min(400px,calc(100vw - 24px));height:min(600px,calc(100dvh - 130px));background:var(--cream);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 50px rgba(8,39,35,.35);display:flex;flex-direction:column;overflow:hidden}
@@ -254,6 +255,7 @@ select:focus,input:focus{outline:none;border-color:var(--g5);box-shadow:0 0 0 3p
 <a href="#/adhkar" data-r="adhkar"><svg viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z"/><path d="M12 6v14"/></svg>الأذكار</a>
 <a href="#/more" data-r="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>المزيد</a>
 </nav>
+<button id="fwFabLbl" type="button">احصل على فتوى موثوقة</button>
 <button id="fwFab" aria-label="اسأل فتوى" title="اسأل فتوى"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.4 0-2.8-.3-4-.9L3 20l1-4.9a8.5 8.5 0 1 1 17-3.6z"/><path d="M9.6 10a2.4 2.4 0 0 1 4.7.6c0 1.5-2.3 1.8-2.3 3"/><circle cx="12" cy="16.3" r=".3"/></svg></button>
 <div id="fwWrap" hidden>
 <div id="fwPanel" role="dialog" aria-label="اسأل فتوى">
@@ -2136,7 +2138,7 @@ function open(){
 }
 function close(){wrap.hidden=true;}
 window.openFatwa=open;
-fab.onclick=open;
+fab.onclick=open;document.getElementById("fwFabLbl").onclick=open;
 document.getElementById("fwClose").onclick=close;
 wrap.addEventListener("click",e=>{if(e.target===wrap)close();});
 FW_CHIPS.forEach(c=>{const b=el("button","",c);b.type="button";b.onclick=()=>answer(c);chips.appendChild(b);});
