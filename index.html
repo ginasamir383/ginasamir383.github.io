@@ -2077,7 +2077,7 @@ async function answer(q){
   msgs.appendChild(m0);scrollEnd();return;
  }
  const pick=ans.slice(0,3).concat(ans.length?rel.slice(0,2):rel.slice(0,4));
- const texts=await Promise.all(pick.map(c=>loadChunk(c.e._p).then(ch=>{const f=ch[String(c.e.i)];return f?Object.assign({},f,{i:c.e.i,k:c.e.k,u:"https://binbaz.org.sa/fatwas/"+c.e.i}):null;}).catch(()=>null)));
+ const texts=await Promise.all(pick.map(c=>loadChunk(c.e._p).then(ch=>{const f=ch[String(c.e.i)];return f?Object.assign({},f,{i:c.e.i,k:c.e.k,u:f.s?"https://binbaz.org.sa/fatwas/"+c.e.i+"/"+f.s:"https://binbaz.org.sa/search?text="+encodeURIComponent(f.t)}):null;}).catch(()=>null)));
  const cards=pick.map((c,i)=>({c,f:texts[i]})).filter(x=>x.f);
  const m=el("div","fw-m bot");
  const ansCards=cards.filter(x=>ans.includes(x.c));
