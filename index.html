@@ -108,6 +108,7 @@ select:focus,input:focus{outline:none;border-color:var(--g5);box-shadow:0 0 0 3p
 .qib .nd{position:absolute;inset:0;transition:transform .2s}
 .qib .nd:before{content:"";position:absolute;top:8px;left:50%;margin-left:-9px;border:9px solid transparent;border-bottom:70px solid var(--gold);border-top:0}
 .qib .nn{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--mute)}
+.qib .nsun{position:absolute;top:1px;left:50%;transform:translateX(-50%);font-size:15px;line-height:1}
 .cnt{font-size:64px;font-weight:700;color:var(--g8);text-align:center;font-variant-numeric:tabular-nums}
 .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;font-size:11px;color:var(--mute)}
 .heat i{display:block;aspect-ratio:1;border-radius:6px;background:var(--g1)}
@@ -329,6 +330,8 @@ function nextPrayer(){
 function cdText(ms){const s=Math.max(0,Math.floor(ms/1000)),p=x=>String(x).padStart(2,"0");return(p(Math.floor(s/3600))+":"+p(Math.floor(s%3600/60))+":"+p(s%60)).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);}
 function hijriStr(){try{const d=new Date(Date.now()+ST.hijriAdj*864e5);return new Intl.DateTimeFormat("ar-EG-u-ca-islamic-umalqura",{day:"numeric",month:"long",year:"numeric"}).format(d);}catch(e){return"";}}
 function qibla(lat,lng){const k=[21.4225,39.8262],p1=lat*D2R,p2=k[0]*D2R,dl=(k[1]-lng)*D2R;return fix(Math.atan2(Math.sin(dl),Math.cos(p1)*Math.tan(p2)-Math.sin(p1)*Math.cos(dl))*R2D,360);}
+/** اتجاه الشمس وارتفاعها الآن: az من الشمال مع عقارب الساعة، alt فوق الأفق */
+function sunAz(lat,lng,ms){const d=new Date(ms),jd=julian(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate())+((ms%864e5)+864e5)%864e5/864e5,sp=sunPos(jd),H=(((ms%864e5)+864e5)%864e5/36e5+sp.eqt+lng/15-12)*15,alt=asin(sin(lat)*sin(sp.decl)+cos(lat)*cos(sp.decl)*cos(H));return{az:fix(atan2(sin(H),cos(H)*sin(lat)-tan(sp.decl)*cos(lat))+180,360),alt};}
 /* ===== الموقع ===== */
 function locAuto(cb){
   if(!navigator.geolocation){toast("المتصفح لا يدعم تحديد الموقع");return;}
@@ -1244,7 +1247,7 @@ let tsTimer;
 function pgMore(){
   const L=curLoc(),qb=Math.round(qibla(L.lat,L.lng));
   view.innerHTML='<h1>المزيد</h1>'
-  +'<div class="card"><h2>اتجاه القبلة</h2><p class="muted" style="margin-top:-6px">من '+esc(L.name)+': <b>'+n(qb)+'°</b> من الشمال باتجاه عقارب الساعة.</p><div class="qib"><span class="nn">شمال</span><div class="nd" id="qn" style="transform:rotate('+qb+'deg)"></div></div><div class="row" style="justify-content:center"><button class="btn soft sm" id="qc">تشغيل البوصلة (للهاتف)</button></div><p class="muted" id="qm" style="text-align:center"></p></div>'
+  +'<div class="card"><h2>اتجاه القبلة</h2><p class="muted" style="margin-top:-6px">من '+esc(L.name)+': <b>'+n(qb)+'°</b> من الشمال باتجاه عقارب الساعة.</p><div class="qib"><span class="nn" id="qnl">شمال</span><span class="nsun" id="qsn" style="display:none">☀️</span><div class="nd" id="qn" style="transform:rotate('+qb+'deg)"></div></div><div class="row" style="justify-content:center;gap:6px"><button class="btn soft sm" id="qc">تشغيل البوصلة (للهاتف)</button><button class="btn soft sm" id="qs">☀️ بالشمس</button></div><p class="muted" id="qm" style="text-align:center"></p></div>'
   +'<div class="card"><h2>المسبحة</h2><div class="cnt" id="tc">'+n(ST.tasbih.count)+'</div><div class="row" style="justify-content:center"><button class="btn" style="min-width:150px;min-height:56px;font-size:20px" id="tp">سبّحي</button><button class="btn ghost" id="tr0">تصفير</button></div><p class="muted" style="text-align:center">الإجمالي: '+n(ST.tasbih.total)+'</p></div>'
   +'<div class="card"><h2>التسميع</h2><p class="muted" style="margin-top:-6px">سمّعي وِردك بصوتك: متابعة فورية كلمة كلمة مقابل النص العثماني، مع تقرير بمواضع الخلل وصوت القارئ النموذجي لكل كلمة.</p><div class="row"><a class="btn soft sm" href="#/tasmee3" style="text-decoration:none">افتحي التسميع</a></div></div>'+'<div class="card"><h2>دروس التجويد</h2><p class="muted" style="margin-top:-6px">أحكام التلاوة باختصار، بأمثلة ملوّنة بنفس ألوان المصحف.</p><div class="row"><a class="btn soft sm" href="#/tajwid" style="text-decoration:none">افتحي الدروس</a></div></div>'
 +'<div class="card"><h2>الأربعون النووية</h2><p class="muted" style="margin-top:-6px">أحاديث الإمام النووي بتخريجها ودرجتها، مع حديث اليوم ووضع للحفظ.</p><div class="row"><a class="btn soft sm" href="#/hadith" style="text-decoration:none">افتحي الأربعين</a></div></div>'+'<div class="card"><h2>أسماء الله الحسنى</h2><p class="muted" style="margin-top:-6px">الأسماء التسعة والتسعون بمعانيها والآية التي ورد فيها، مع بطاقات واختبار.</p><div class="row"><a class="btn soft sm" href="#/asma" style="text-decoration:none">افتحي الأسماء</a></div></div>'
@@ -1257,9 +1260,27 @@ function pgMore(){
   $("#bki").onclick=()=>{const m=modal('<h3>استعادة نسخة</h3><p class="muted">الصقي النص المحفوظ هنا. سيستبدل بياناتك الحالية.</p><textarea id="bkt" style="width:100%;height:160px;direction:ltr;border:1.5px solid var(--line);border-radius:12px;padding:8px"></textarea><p class="row"><button class="btn" id="bkok">استعادة</button><button class="btn ghost" id="bkc">إلغاء</button></p>');$("#bkc",m).onclick=()=>m.close();$("#bkok",m).onclick=()=>{try{const o=JSON.parse($("#bkt",m).value);if(!o||o.v!==1)throw 0;o.meta={u:Date.now()};store.set("wird.v1",JSON.stringify(o));location.reload();}catch(e){toast("النص غير صحيح");}};};
   $("#tr0").onclick=()=>{ST.tasbih.count=0;save();$("#tc").textContent=n(0);};
   $("#wipe").onclick=()=>{if(confirm("سيتم مسح كل البيانات المحفوظة على هذا الجهاز وفي حسابك إن وُجد. متأكدة؟")){window.__wirdWipe&&window.__wirdWipe();try{localStorage.removeItem("wird.v1");localStorage.removeItem("wird.auth");}catch(e){}delete mem["wird.v1"];location.reload();}};
+  let qibSess=null;
+  const qibStop=()=>{if(!qibSess)return;if(qibSess.hAbs)window.removeEventListener("deviceorientationabsolute",qibSess.hAbs,true);if(qibSess.hRel)window.removeEventListener("deviceorientation",qibSess.hRel,true);(qibSess.timers||[]).forEach(clearTimeout);if(qibSess.sunTick)clearInterval(qibSess.sunTick);qibSess=null;};
+  const sunDial=()=>{
+    const r=sunAz(L.lat,L.lng,Date.now()),qm=$("#qm");
+    if(r.alt<-0.833){if(qm)qm.textContent="الشمس مغيبة دلوقتي 🌙 والطريقة دي بتشتغل في النهار بس. استخدمي الزاوية المكتوبة فوق مع أي بوصلة تانية.";return false;}
+    const nl=$("#qnl"),sn=$("#qsn"),nd=$("#qn");
+    if(nl)nl.style.display="none";if(sn)sn.style.display="";
+    if(nd)nd.style.transform="rotate("+fix(qb-r.az,360)+"deg)";
+    if(qm)qm.textContent="وضع الشمس ☀️ وجّهي أعلى الموبايل ناحية الشمس بالظبط، وساعتها السهم الذهبي بيشاور على القبلة.";
+    return true;
+  };
+  $("#qs").onclick=()=>{
+    qibStop();
+    if(sunDial()){const tk=setInterval(()=>{if(!document.getElementById("qn")){qibStop();return;}sunDial();},30000);qibSess={timers:[],sunTick:tk};}
+  };
   $("#qc").onclick=async()=>{
     const start=()=>{
-      let abs=false,cur=qb;
+      qibStop();
+      const nl=$("#qnl"),sn=$("#qsn"),nd=$("#qn");if(nl)nl.style.display="";if(sn)sn.style.display="none";if(nd)nd.style.transform="rotate("+qb+"deg)";
+      let abs=false,cur=qb,ev=0,evHd=0,mn=null,mx=null;
+      const sess={timers:[]};qibSess=sess;
       const scr=()=>{try{if(screen.orientation&&typeof screen.orientation.angle==="number")return screen.orientation.angle;if(typeof window.orientation==="number")return window.orientation;}catch(e){}return 0;};
       const head=e=>{
         if(e.webkitCompassHeading!=null)return e.webkitCompassHeading;
@@ -1268,17 +1289,22 @@ function pgMore(){
       };
       const show=hd=>{
         if(hd==null)return;
+        evHd++;if(mn==null){mn=mx=hd;}else{mn=Math.min(mn,hd);mx=Math.max(mx,hd);}
         const t=qb-hd,d=((t-cur)%360+540)%360-180;
         cur+=d*0.35;
-        const nd=$("#qn");if(nd)nd.style.transform="rotate("+cur+"deg)";
+        const nd2=$("#qn");if(nd2)nd2.style.transform="rotate("+cur+"deg)";
         const qm=$("#qm");if(qm)qm.textContent="وجّهي أعلى الهاتف نحو السهم الذهبي: ده اتجاه القبلة.";
       };
-      const hAbs=e=>{abs=true;show(head(e));};
-      const hRel=e=>{if(!abs)show(head(e));};
+      const hAbs=e=>{ev++;const hd=head(e);if(hd==null)return;abs=true;show(hd);};
+      const hRel=e=>{ev++;if(!abs)show(head(e));};
       window.addEventListener("deviceorientationabsolute",hAbs,true);
       window.addEventListener("deviceorientation",hRel,true);
+      sess.hAbs=hAbs;sess.hRel=hRel;
+      sess.timers.push(setTimeout(()=>{if(ev===0){const qm=$("#qm");if(qm)qm.textContent="المتصفح ده مش بيدّي بيانات حساس الاتجاه. افتحي الموقع من متصفح Safari أو Chrome مباشرة مش من لينك جوه واتساب، أو استخدمي وضع الشمس ☀️";}},4000));
+      sess.timers.push(setTimeout(()=>{if(ev>0&&evHd===0){const qm=$("#qm");if(qm)qm.textContent="الموبايل بيبعت حركة بس من غير اتجاه بوصلة، يعني الحساس مش متاح للمتصفح. استخدمي وضع الشمس ☀️ أو الزاوية المكتوبة فوق مع أي تطبيق بوصلة.";}},7000));
+      sess.timers.push(setTimeout(()=>{if(evHd>25&&mn!=null&&(mx-mn)<3){const qm=$("#qm");if(qm)qm.textContent="حساس البوصلة ثابت ومش بيلف مع الموبايل. جربي تعايريه بتحريكه على شكل رقم ٨ في الهواء، ولو ماظبطش استخدمي وضع الشمس ☀️";}},15000));
     };
-    try{if(typeof DeviceOrientationEvent!=="undefined"&&DeviceOrientationEvent.requestPermission){const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){$("#qm").textContent="لم يُسمح باستخدام البوصلة.";return;}}start();$("#qm").textContent="تم تشغيل البوصلة. لو الاتجاه مش مظبوط، حرّكي هاتفك في الهواء على شكل رقم ٨ لمعايرة حساس البوصلة.";}catch(e){$("#qm").textContent="البوصلة غير متاحة على هذا الجهاز. استخدمي الزاوية المذكورة.";}
+    try{if(typeof DeviceOrientationEvent!=="undefined"&&DeviceOrientationEvent.requestPermission){const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){$("#qm").textContent="لم يُسمح باستخدام البوصلة.";return;}}start();$("#qm").textContent="تم تشغيل البوصلة. لو الاتجاه مش مظبوط، حرّكي هاتفك في الهواء على شكل رقم ٨ لمعايرة حساس البوصلة.";}catch(e){$("#qm").textContent="البوصلة غير متاحة على هذا الجهاز. استخدمي الزاوية المذكورة أو وضع الشمس ☀️.";}
   };
 }
 /* ===== الأذكار ===== */
@@ -1480,7 +1506,7 @@ function pgAsma(p){
 
 /* ===== تشغيل ===== */
 route();pUI();
-window.__wird={computeTimes,tzOffset,dayTimes,nextPortion,rate,newSeg,LADDER,khatmaBounds,fromGi,gi,SC,TOTAL,ST:()=>ST,qibla};
+window.__wird={computeTimes,tzOffset,dayTimes,nextPortion,rate,newSeg,LADDER,khatmaBounds,fromGi,gi,SC,TOTAL,ST:()=>ST,qibla,sunAz};
 </script>
 <script>
 try{if(localStorage.getItem("wird.auth"))document.getElementById("gate").classList.add("hide");}catch(e){}
