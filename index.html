@@ -250,7 +250,7 @@ select:focus,input:focus{outline:none;border-color:var(--g5);box-shadow:0 0 0 3p
 <a href="#/home" data-r="home"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>الصلاة</a>
 <a href="#/quran" data-r="quran"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 8h6"/></svg>القرآن</a>
 
-<a href="#/hifz" data-r="hifz"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.3l6-.7z"/></svg>الحفظ</a>
+<a href="#/plan" data-r="hifz"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.3l6-.7z"/></svg>الحفظ</a>
 <a href="#/tasmee3" data-r="tasmee3"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>التسميع</a>
 <a href="#/adhkar" data-r="adhkar"><svg viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z"/><path d="M12 6v14"/></svg>الأذكار</a>
 <a href="#/more" data-r="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>المزيد</a>
@@ -963,6 +963,7 @@ function tsmLog(){
 }
 
 function route(){
+  if(/^#\/?hifz(\/|$)/.test(location.hash)){history.replaceState(null,"","#/plan");}
   const h=location.hash.replace(/^#\/?/,"")||"home",parts=h.split("/"),r=parts[0];
   $$("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.r===(r==="plan"?"hifz":r)));
   ({home:pgHome,quran:pgQuran,hifz:pgHifz,adhkar:pgAdhkar,more:pgMore,tajwid:pgTajwid,tasmee3:pgTasmee3,hadith:pgHadith,asma:pgAsma,islamhouse:pgIslamhouse,plan:(q)=>window.pgPlan?window.pgPlan(q):pgHome(q)}[r]||pgHome)(parts.slice(1));
@@ -2162,6 +2163,6 @@ inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposi
 form.onsubmit=e=>{e.preventDefault();const q=inp.value.trim();if(!q)return;inp.value="";fwGrow();answer(q);};
 })();
 </script>
-<script src="plan.js?v=2"></script>
+<script src="plan.js?v=3"></script>
 </body>
 </html>
